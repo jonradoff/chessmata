@@ -45,7 +45,7 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
     prevIs3DRef.current = is3D
 
     const targetCamera = is3D ? camera3D : camera2D
-    const targetMorph = is3D ? 1 : 0
+    // const targetMorph = is3D ? 1 : 0  // Reserved for future morph animations
 
     // Disable controls during transition
     if (controlsRef.current) {

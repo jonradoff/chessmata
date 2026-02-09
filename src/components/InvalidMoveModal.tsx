@@ -197,7 +197,7 @@ export function InvalidMoveModal({ reason, pieceType, onClose }: InvalidMoveModa
                       const isArrow = ['↓', '→', '←', '↑', '↗', '↖', '↘', '↙', '>'].includes(cell)
                       const isCapture = cell === 'C'
                       const isEmpty = cell === '.'
-                      const isPiece = !isHighlighted && !isBlocked && !isArrow && !isEmpty && !isCapture
+                      // const isPiece = !isHighlighted && !isBlocked && !isArrow && !isEmpty && !isCapture
 
                       return (
                         <div
