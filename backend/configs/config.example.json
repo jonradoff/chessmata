@@ -1,0 +1,24 @@
+{
+  "server": {
+    "host": "localhost",
+    "port": 9029
+  },
+  "mongodb": {
+    "uri": "${MONGODB_URI}",
+    "database": "chessmata_dev"
+  },
+  "frontend": {
+    "url": "http://localhost:9030"
+  },
+  "jwt": {
+    "accessSecret": "${JWT_ACCESS_SECRET}",
+    "refreshSecret": "${JWT_REFRESH_SECRET}",
+    "accessTtl": 15,
+    "refreshTtl": 7
+  },
+  "oauth": {
+    "googleClientId": "${GOOGLE_CLIENT_ID}",
+    "googleClientSecret": "${GOOGLE_CLIENT_SECRET}",
+    "googleRedirectUrl": "http://localhost:9029/api/auth/google/callback"
+  }
+}

@@ -1,0 +1,208 @@
+.new-game-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  backdrop-filter: blur(4px);
+  pointer-events: auto;
+}
+
+.new-game-modal {
+  background: rgba(25, 25, 35, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  width: 500px;
+  max-width: 90vw;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+.new-game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.new-game-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.new-game-header .close-button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.new-game-header .close-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.new-game-header .close-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.new-game-content {
+  padding: 24px;
+}
+
+.error-message {
+  background: rgba(255, 80, 80, 0.15);
+  border: 1px solid rgba(255, 80, 80, 0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  color: #ff6666;
+  font-size: 14px;
+}
+
+.create-section {
+  text-align: center;
+}
+
+.description {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 15px;
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+.create-game-btn {
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #4a7c4e 0%, #3d6640 100%);
+  border: 1px solid rgba(100, 200, 100, 0.3);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.create-game-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5a8c5e 0%, #4d7650 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(100, 200, 100, 0.3);
+}
+
+.create-game-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.links-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.link-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.link-group label {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.link-row {
+  display: flex;
+  gap: 8px;
+}
+
+.link-input {
+  flex: 1;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 13px;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.link-input:focus {
+  outline: none;
+  border-color: rgba(100, 150, 255, 0.5);
+}
+
+.copy-btn {
+  padding: 10px 16px;
+  background: rgba(100, 150, 255, 0.2);
+  border: 1px solid rgba(100, 150, 255, 0.4);
+  border-radius: 8px;
+  color: #6496ff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.copy-btn:hover {
+  background: rgba(100, 150, 255, 0.3);
+  border-color: rgba(100, 150, 255, 0.6);
+}
+
+.link-hint {
+  margin: 4px 0 0 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+}
+
+.status-section {
+  padding: 16px;
+  background: rgba(255, 200, 50, 0.1);
+  border: 1px solid rgba(255, 200, 50, 0.2);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.waiting-text {
+  margin: 0;
+  color: #ffc832;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.start-playing-btn {
+  width: 100%;
+  padding: 14px;
+  background: rgba(100, 150, 255, 0.15);
+  border: 1px solid rgba(100, 150, 255, 0.3);
+  border-radius: 10px;
+  color: #6496ff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.start-playing-btn:hover {
+  background: rgba(100, 150, 255, 0.25);
+  border-color: rgba(100, 150, 255, 0.5);
+}

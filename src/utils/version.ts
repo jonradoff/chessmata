@@ -1,0 +1,7 @@
+export const VERSION = '1.0.0'
+export const AGENT_NAME = 'chessmata-3d'
+export const AGENT_VERSION = '1.0.0'
+export const COPYRIGHT_YEAR = '2026'
+export const COMPANY_NAME = 'Metavert LLC'
+export const COMPANY_URL = 'https://metavert.io'
+export const LICENSE = 'MIT License'

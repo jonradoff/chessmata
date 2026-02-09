@@ -1,0 +1,64 @@
+.connection-error-modal {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2px solid rgba(255, 100, 100, 0.3);
+  border-radius: 16px;
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.3s ease-out;
+}
+
+.connection-error-modal .modal-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid rgba(255, 100, 100, 0.2);
+}
+
+.connection-error-modal .modal-header h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+.connection-error-modal .modal-content {
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.connection-error-modal .error-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.connection-error-modal .error-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 16px 0;
+}
+
+.connection-error-modal .error-message {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.connection-error-modal .modal-actions {
+  padding: 16px 24px 24px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
