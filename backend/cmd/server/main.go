@@ -115,6 +115,26 @@ func main() {
 		w.Write([]byte("OK"))
 	}).Methods("GET")
 
+	// Serve static files in production
+	if cfg.Environment == "prod" {
+		// Serve frontend static files
+		spa := http.FileServer(http.Dir("./public"))
+		router.PathPrefix("/").Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Don't serve static files for API or WebSocket routes
+			if len(r.URL.Path) >= 4 && (r.URL.Path[:4] == "/api" || r.URL.Path[:3] == "/ws") {
+				http.NotFound(w, r)
+				return
+			}
+			// Serve index.html for all non-existent files (SPA routing)
+			path := "./public" + r.URL.Path
+			if _, err := os.Stat(path); os.IsNotExist(err) {
+				http.ServeFile(w, r, "./public/index.html")
+				return
+			}
+			spa.ServeHTTP(w, r)
+		}))
+	}
+
 	// CORS middleware
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   []string{cfg.Frontend.URL},

@@ -1,0 +1,24 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080
+  },
+  "mongodb": {
+    "uri": "${MONGODB_URI}",
+    "database": "chessmata"
+  },
+  "frontend": {
+    "url": "https://chessmata.com"
+  },
+  "jwt": {
+    "accessSecret": "${JWT_ACCESS_SECRET}",
+    "refreshSecret": "${JWT_REFRESH_SECRET}",
+    "accessTtl": 15,
+    "refreshTtl": 7
+  },
+  "oauth": {
+    "googleClientId": "${GOOGLE_CLIENT_ID}",
+    "googleClientSecret": "${GOOGLE_CLIENT_SECRET}",
+    "googleRedirectUrl": "https://chessmata.com/api/auth/google/callback"
+  }
+}
