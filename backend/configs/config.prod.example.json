@@ -8,7 +8,7 @@
     "database": "chessmata"
   },
   "frontend": {
-    "url": "https://chessmata.com"
+    "url": "https://chessmata.metavert.io"
   },
   "jwt": {
     "accessSecret": "${JWT_ACCESS_SECRET}",
@@ -19,6 +19,6 @@
   "oauth": {
     "googleClientId": "${GOOGLE_CLIENT_ID}",
     "googleClientSecret": "${GOOGLE_CLIENT_SECRET}",
-    "googleRedirectUrl": "https://chessmata.com/api/auth/google/callback"
+    "googleRedirectUrl": "https://chessmata.metavert.io/api/auth/google/callback"
   }
 }
