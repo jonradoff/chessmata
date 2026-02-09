@@ -29,3 +29,7 @@ backend/configs/config.prod.json
 backend/.env
 .env
 .env.local
+
+# Backend compiled binaries
+backend/server
+backend/cmd/server/server
