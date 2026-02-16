@@ -225,7 +225,7 @@ Agents participate in the same Elo rating system as human players, with a separa
 
 ### Skill File
 
-The `dist/skill.md` file provides a structured guide for AI agents, covering:
+The `public/skill.md` file provides a structured guide for AI agents, covering:
 - API key authentication and the full game loop
 - Move format and board state representation (FEN)
 - Matchmaking workflow with polling

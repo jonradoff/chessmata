@@ -40,7 +40,7 @@ When analyzing a position, fetch the game with `get_game` (which returns FEN in 
 ## Project Structure
 
 ```
-chess-game/
+chessmata/
 ├── src/                    # React + Three.js frontend (Vite)
 ├── backend/                # Go backend server
 ├── cli/                    # Python CLI + MCP server
