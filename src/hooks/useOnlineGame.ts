@@ -23,15 +23,9 @@ export interface OnlineGameState {
   drawAutoDeclineMessage: string | null
 }
 
+import { WS_BASE } from '../api/config'
+
 const STORAGE_KEY = 'chess_game_session'
-// In production, use relative URLs based on current protocol/host
-const getWsBase = () => {
-  if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL
-  if (window.location.hostname === 'localhost') return 'ws://localhost:9029/ws'
-  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${wsProtocol}//${window.location.host}/ws`
-}
-const WS_BASE = getWsBase()
 
 interface StoredSession {
   sessionId: string
@@ -110,7 +104,6 @@ export function useOnlineGame() {
     const ws = new WebSocket(wsUrl)
 
     ws.onopen = () => {
-      console.log('WebSocket connected')
       reconnectAttemptRef.current = 0
       // On reconnect, refresh game state to catch anything we missed
       if (stateRef.current.game) {
@@ -214,7 +207,6 @@ export function useOnlineGame() {
     }
 
     ws.onclose = () => {
-      console.log('WebSocket disconnected')
       // Auto-reconnect if game is still active and component is mounted
       if (!mountedRef.current) return
       const currentState = stateRef.current
@@ -224,11 +216,9 @@ export function useOnlineGame() {
         const attempt = reconnectAttemptRef.current
         const delay = Math.min(1000 * Math.pow(2, attempt), 15000)
         reconnectAttemptRef.current = attempt + 1
-        console.log(`Scheduling WebSocket reconnect in ${delay}ms (attempt ${attempt + 1})...`)
         reconnectTimerRef.current = setTimeout(() => {
           if (!mountedRef.current) return
           if (wsSessionRef.current?.sessionId === session.sessionId) {
-            console.log('Reconnecting WebSocket...')
             connectWebSocket(session.sessionId, session.playerId)
           }
         }, delay)
@@ -255,12 +245,9 @@ export function useOnlineGame() {
   }, [])
 
   const createGame = useCallback(async () => {
-    console.log('Creating new game...')
     setState(prev => ({ ...prev, isLoading: true, error: null }))
     try {
-      console.log('Calling API createGame...')
       const response = await api.createGame()
-      console.log('Create game response:', response)
       const fullShareLink = `${window.location.origin}/game/${response.sessionId}`
 
       storeSession(response.sessionId, response.playerId)
@@ -269,9 +256,7 @@ export function useOnlineGame() {
       window.history.pushState({}, '', `/game/${response.sessionId}`)
 
       // Fetch the created game
-      console.log('Fetching game details...')
       const game = await api.getGame(response.sessionId)
-      console.log('Game details:', game)
 
       setState(prev => ({
         ...prev,
@@ -286,7 +271,6 @@ export function useOnlineGame() {
       }))
 
       // Connect WebSocket
-      console.log('Connecting WebSocket...')
       connectWebSocket(response.sessionId, response.playerId)
 
       return response
@@ -303,11 +287,9 @@ export function useOnlineGame() {
   }, [connectWebSocket])
 
   const joinGame = useCallback(async (sessionId: string, existingPlayerId?: string) => {
-    console.log('Attempting to join game:', { sessionId, existingPlayerId })
     setState(prev => ({ ...prev, isLoading: true, error: null, connectionError: null }))
     try {
       const response = await api.joinGame(sessionId, existingPlayerId)
-      console.log('Join game response:', response)
       const fullShareLink = `${window.location.origin}/game/${response.sessionId}`
 
       storeSession(response.sessionId, response.playerId)
@@ -317,17 +299,13 @@ export function useOnlineGame() {
 
       // Fetch moves
       const movesResponse = await api.getMoves(sessionId)
-      console.log('Fetched moves:', movesResponse)
 
       // If we started restoring, ensure modal shows for at least 800ms
       const minDisplayTime = 800
       if (restoringStartTime.current) {
         const elapsed = Date.now() - restoringStartTime.current
-        console.log('Restoration took:', elapsed, 'ms. Minimum display time:', minDisplayTime, 'ms')
         if (elapsed < minDisplayTime) {
-          const waitTime = minDisplayTime - elapsed
-          console.log('Waiting additional', waitTime, 'ms to show modal')
-          await new Promise(resolve => setTimeout(resolve, waitTime))
+          await new Promise(resolve => setTimeout(resolve, minDisplayTime - elapsed))
         }
         restoringStartTime.current = null
       }
@@ -445,8 +423,6 @@ export function useOnlineGame() {
         api.getMoves(state.sessionId),
       ])
 
-      console.log('After move - game.currentTurn:', game.currentTurn, 'playerColor:', state.playerColor)
-
       setState(prev => {
         const fetchedMoves = movesResponse.moves || []
         // If WebSocket already delivered more recent state (e.g. opponent responded
@@ -492,30 +468,20 @@ export function useOnlineGame() {
   const resignGame = useCallback(async () => {
     const { sessionId, playerId } = stateRef.current
     if (!sessionId || !playerId) {
-      console.log('Cannot resign: missing sessionId or playerId', { sessionId, playerId })
       return
     }
 
-    console.log('resignGame: Starting resignation', { sessionId, playerId })
-
     try {
       const response = await api.resignGame(sessionId, playerId)
-      console.log('resignGame: API response received', response)
       if (response.success) {
         // Fetch the updated game state so we can show the game summary
         // Do NOT clear state here - let the UI show the defeat dialog first
         // The leaveGame function will be called when user dismisses the summary
-        console.log('resignGame: Fetching updated game state...')
         const game = await api.getGame(sessionId)
-        console.log('resignGame: Got updated game', { status: game.status, winner: game.winner })
-        setState(prev => {
-          console.log('resignGame: Updating state with game, keeping sessionId:', prev.sessionId)
-          return {
-            ...prev,
-            game,
-          }
-        })
-        console.log('resignGame: State updated, resignation complete')
+        setState(prev => ({
+          ...prev,
+          game,
+        }))
       } else {
         console.error('Resign failed:', response.error)
         setState(prev => ({ ...prev, error: response.error || 'Failed to resign' }))
@@ -650,15 +616,11 @@ export function useOnlineGame() {
     if (hasInitialized.current) return
     hasInitialized.current = true
 
-    console.log('=== useOnlineGame initialization ===')
     const path = window.location.pathname
-    console.log('Current path:', path)
     const match = path.match(/\/game\/([a-f0-9]+)/)
     if (match) {
       const urlSessionId = match[1]
-      console.log('Found session ID in URL:', urlSessionId)
       const stored = getStoredSession()
-      console.log('Stored session:', stored)
 
       // Set restoring state before attempting to join
       restoringStartTime.current = Date.now()
@@ -666,24 +628,17 @@ export function useOnlineGame() {
 
       if (stored && stored.sessionId === urlSessionId) {
         // Rejoin existing session
-        console.log('Rejoining existing session')
         joinGameRef.current(urlSessionId, stored.playerId)
       } else {
         // Join as new player
-        console.log('Joining as new player')
         joinGameRef.current(urlSessionId)
       }
     } else {
-      // Check for stored session
-      console.log('No session ID in URL, checking localStorage')
       const stored = getStoredSession()
       if (stored) {
-        console.log('Found stored session, rejoining:', stored)
         restoringStartTime.current = Date.now()
         setState(prev => ({ ...prev, isRestoring: true }))
         joinGameRef.current(stored.sessionId, stored.playerId)
-      } else {
-        console.log('No stored session found')
       }
     }
   }, [])

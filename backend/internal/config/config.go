@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Config struct {
@@ -67,7 +68,38 @@ func Load(env string) (*Config, error) {
 	}
 
 	cfg.Environment = env
+
+	if err := cfg.validate(); err != nil {
+		return nil, fmt.Errorf("config validation failed: %w", err)
+	}
+
 	return &cfg, nil
+}
+
+func (c *Config) validate() error {
+	var missing []string
+	if c.MongoDB.URI == "" {
+		missing = append(missing, "mongodb.uri")
+	}
+	if c.MongoDB.Database == "" {
+		missing = append(missing, "mongodb.database")
+	}
+	if c.JWT.AccessSecret == "" {
+		missing = append(missing, "jwt.accessSecret")
+	}
+	if c.JWT.RefreshSecret == "" {
+		missing = append(missing, "jwt.refreshSecret")
+	}
+	if c.Server.Port == 0 {
+		missing = append(missing, "server.port")
+	}
+	if c.Frontend.URL == "" {
+		missing = append(missing, "frontend.url")
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("missing required config fields: %s", strings.Join(missing, ", "))
+	}
+	return nil
 }
 
 // expandEnvVars replaces ${VAR_NAME} with environment variable values

@@ -333,7 +333,10 @@ func (a *BuiltinAgent) respondToDraw(sessionID, playerID string, accept bool) er
 		"accept":   accept,
 	}
 
-	body, _ := json.Marshal(payload)
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal draw response: %w", err)
+	}
 	url := fmt.Sprintf("%s/api/games/%s/respond-draw", a.serverAddr, sessionID)
 
 	resp, err := a.authedPost(url, body)
@@ -462,7 +465,10 @@ func (a *BuiltinAgent) makeMove(sessionID, playerID, from, to, promotion string)
 		payload["promotion"] = promotion
 	}
 
-	body, _ := json.Marshal(payload)
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal move payload: %w", err)
+	}
 	url := fmt.Sprintf("%s/api/games/%s/move", a.serverAddr, sessionID)
 
 	resp, err := a.authedPost(url, body)

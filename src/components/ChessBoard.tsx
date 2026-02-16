@@ -91,11 +91,8 @@ export function ChessBoard({ morphProgress, gameState, boardMaterial, onlineCont
       const validation = isValidMove(board, from, to)
 
       if (!validation.valid) {
-        console.log('ChessBoard - Invalid move:', validation.reason, 'pieceType:', validation.pieceType)
-        console.log('ChessBoard - onInvalidMove callback exists:', !!onlineContext?.onInvalidMove)
         // Show invalid move modal
         if (onlineContext?.onInvalidMove && validation.reason && validation.pieceType) {
-          console.log('ChessBoard - Calling onInvalidMove')
           onlineContext.onInvalidMove({
             reason: validation.reason,
             pieceType: validation.pieceType

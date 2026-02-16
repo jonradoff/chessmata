@@ -65,7 +65,10 @@ func (s *GameCompletionService) ProcessGameCompletion(ctx context.Context, game 
 	}
 
 	// Count moves
-	moveCount, _ := s.db.Moves().CountDocuments(ctx, bson.M{"sessionId": game.SessionID})
+	moveCount, err := s.db.Moves().CountDocuments(ctx, bson.M{"sessionId": game.SessionID})
+	if err != nil {
+		log.Printf("Failed to count moves for game %s: %v", game.SessionID, err)
+	}
 
 	var result *GameCompletionResult
 
@@ -187,7 +190,7 @@ func (s *GameCompletionService) ProcessGameCompletion(ctx context.Context, game 
 		CompletedAt:      time.Now(),
 	}
 
-	_, err := s.db.MatchHistory().InsertOne(ctx, matchHistory)
+	_, err = s.db.MatchHistory().InsertOne(ctx, matchHistory)
 	if err != nil {
 		log.Printf("Failed to create match history for game %s: %v", game.SessionID, err)
 	}

@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:9029/api' : '/api')
+import { API_BASE } from './config'
 
 export interface ApiKey {
   id: string

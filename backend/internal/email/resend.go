@@ -10,9 +10,10 @@ import (
 )
 
 type ResendService struct {
-	apiKey  string
-	fromEmail string
-	baseURL string
+	apiKey      string
+	fromEmail   string
+	baseURL     string
+	frontendURL string
 }
 
 type EmailRequest struct {
@@ -26,11 +27,12 @@ type EmailResponse struct {
 	ID string `json:"id"`
 }
 
-func NewResendService(apiKey string) *ResendService {
+func NewResendService(apiKey, frontendURL string) *ResendService {
 	return &ResendService{
-		apiKey:    apiKey,
-		fromEmail: "Chessmata <noreply@chessmata.metavert.io>",
-		baseURL:   "https://api.resend.com",
+		apiKey:      apiKey,
+		fromEmail:   "Chessmata <noreply@chessmata.metavert.io>",
+		baseURL:     "https://api.resend.com",
+		frontendURL: frontendURL,
 	}
 }
 
@@ -73,7 +75,7 @@ func (s *ResendService) SendEmail(to, subject, html string) error {
 }
 
 func (s *ResendService) SendVerificationEmail(to, displayName, token string) error {
-	verifyURL := fmt.Sprintf("https://chessmata.metavert.io/verify-email?token=%s", token)
+	verifyURL := fmt.Sprintf("%s/verify-email?token=%s", s.frontendURL, token)
 
 	html := fmt.Sprintf(`
 <!DOCTYPE html>
@@ -125,7 +127,7 @@ func (s *ResendService) SendVerificationEmail(to, displayName, token string) err
 }
 
 func (s *ResendService) SendPasswordResetEmail(to, displayName, token string) error {
-	resetURL := fmt.Sprintf("https://chessmata.metavert.io/reset-password?token=%s", token)
+	resetURL := fmt.Sprintf("%s/reset-password?token=%s", s.frontendURL, token)
 
 	html := fmt.Sprintf(`
 <!DOCTYPE html>

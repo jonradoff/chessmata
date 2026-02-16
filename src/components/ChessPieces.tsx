@@ -246,20 +246,11 @@ function ChessPiece({ piece, morphProgress, gameState, is3D, isSelected, isInChe
       const validation = isValidMove(board, from, to)
 
       if (!validation.valid) {
-        console.log('Invalid move:', validation.reason, 'pieceType:', validation.pieceType)
-        console.log('onInvalidMove callback exists:', !!onlineContext?.onInvalidMove)
         // Show invalid move modal
         if (onlineContext?.onInvalidMove && validation.reason && validation.pieceType) {
-          console.log('Calling onInvalidMove with:', { reason: validation.reason, pieceType: validation.pieceType })
           onlineContext.onInvalidMove({
             reason: validation.reason,
             pieceType: validation.pieceType
-          })
-        } else {
-          console.log('Not showing modal - missing:', {
-            hasCallback: !!onlineContext?.onInvalidMove,
-            hasReason: !!validation.reason,
-            hasPieceType: !!validation.pieceType
           })
         }
         gameState.selectPiece(null)
@@ -391,7 +382,6 @@ function ChessPiece({ piece, morphProgress, gameState, is3D, isSelected, isInChe
 
           gameState.movePiece(piece.id, targetSquare.file, targetSquare.rank)
         } else {
-          console.log('Invalid move:', validation.reason)
           gameState.selectPiece(null)
         }
       } else {

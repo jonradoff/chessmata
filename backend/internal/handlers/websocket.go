@@ -179,6 +179,15 @@ func (h *Hub) Run() {
 			log.Printf("Spectator unregistered: session=%s", client.sessionId)
 
 		case msg := <-h.broadcast:
+			// Collect dead clients under read lock, then remove under write lock
+			type deadPlayer struct {
+				sessionId string
+				playerId  string
+				client    *Client
+			}
+			var deadPlayers []deadPlayer
+			var deadSpecs []*Client
+
 			h.mu.RLock()
 			// Send to players
 			if session, ok := h.sessions[msg.SessionId]; ok {
@@ -187,26 +196,52 @@ func (h *Hub) Run() {
 						select {
 						case client.send <- msg.Message:
 						default:
-							close(client.send)
-							delete(session, playerId)
+							deadPlayers = append(deadPlayers, deadPlayer{msg.SessionId, playerId, client})
 						}
 					}
 				}
 			}
 			// Send to all spectators (no exclusion)
 			if specs, ok := h.spectators[msg.SessionId]; ok {
-				activeSpecs := specs[:0]
 				for _, spec := range specs {
 					select {
 					case spec.send <- msg.Message:
-						activeSpecs = append(activeSpecs, spec)
 					default:
-						close(spec.send)
+						deadSpecs = append(deadSpecs, spec)
 					}
 				}
-				h.spectators[msg.SessionId] = activeSpecs
 			}
 			h.mu.RUnlock()
+
+			// Clean up dead clients under write lock
+			if len(deadPlayers) > 0 || len(deadSpecs) > 0 {
+				h.mu.Lock()
+				for _, dp := range deadPlayers {
+					if session, ok := h.sessions[dp.sessionId]; ok {
+						if _, exists := session[dp.playerId]; exists {
+							close(dp.client.send)
+							delete(session, dp.playerId)
+							if len(session) == 0 {
+								delete(h.sessions, dp.sessionId)
+							}
+						}
+					}
+				}
+				for _, spec := range deadSpecs {
+					specs := h.spectators[msg.SessionId]
+					for i, s := range specs {
+						if s == spec {
+							close(spec.send)
+							h.spectators[msg.SessionId] = append(specs[:i], specs[i+1:]...)
+							break
+						}
+					}
+					if len(h.spectators[msg.SessionId]) == 0 {
+						delete(h.spectators, msg.SessionId)
+					}
+				}
+				h.mu.Unlock()
+			}
 		}
 	}
 }
@@ -319,7 +354,11 @@ func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 						http.Error(w, "Invalid token", http.StatusUnauthorized)
 						return
 					}
-					claimUID, _ := primitive.ObjectIDFromHex(claims.UserID)
+					claimUID, err := primitive.ObjectIDFromHex(claims.UserID)
+					if err != nil {
+						http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+						return
+					}
 					if claimUID != *p.UserID {
 						http.Error(w, "Not authorized for this player", http.StatusForbidden)
 						return

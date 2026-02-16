@@ -8,6 +8,7 @@ import {
   type TimeControlMode,
 } from '../api/gameApi'
 import { AGENT_NAME, AGENT_VERSION } from '../utils/version'
+import { WS_BASE } from '../api/config'
 
 export interface MatchmakingOptions {
   displayName: string
@@ -26,12 +27,6 @@ export interface MatchmakingState {
   error: string | null
 }
 
-function getWsBase() {
-  if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL
-  if (window.location.hostname === 'localhost') return 'ws://localhost:9029/ws'
-  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${wsProtocol}//${window.location.host}/ws`
-}
 
 export function useMatchmaking() {
   const [state, setState] = useState<MatchmakingState>({
@@ -99,12 +94,9 @@ export function useMatchmaking() {
   }, [])
 
   const connectMatchmakingWs = useCallback((connectionId: string) => {
-    const wsBase = getWsBase()
-    const ws = new WebSocket(`${wsBase}/matchmaking/${connectionId}`)
+    const ws = new WebSocket(`${WS_BASE}/matchmaking/${connectionId}`)
 
-    ws.onopen = () => {
-      console.log('Matchmaking WebSocket connected')
-    }
+    ws.onopen = () => {}
 
     ws.onmessage = (event) => {
       try {
@@ -122,13 +114,9 @@ export function useMatchmaking() {
       }
     }
 
-    ws.onerror = () => {
-      console.warn('Matchmaking WebSocket error')
-    }
+    ws.onerror = () => {}
 
-    ws.onclose = () => {
-      console.log('Matchmaking WebSocket closed')
-    }
+    ws.onclose = () => {}
 
     wsRef.current = ws
 

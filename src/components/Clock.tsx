@@ -10,6 +10,8 @@ interface ClockProps {
   label?: string
   /** Whether this is the current player's clock */
   isPlayer?: boolean
+  /** Called once when the clock reaches zero */
+  onExpired?: () => void
 }
 
 /**
@@ -47,15 +49,19 @@ function formatTime(ms: number): string {
   return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
 }
 
-export function Clock({ timeMs, isActive, label, isPlayer }: ClockProps) {
+export function Clock({ timeMs, isActive, label, isPlayer, onExpired }: ClockProps) {
   const [displayTime, setDisplayTime] = useState(timeMs)
   const lastUpdateRef = useRef(Date.now())
   const animationFrameRef = useRef<number | null>(null)
+  const expiredFiredRef = useRef(false)
 
   // Update display time when prop changes
   useEffect(() => {
     setDisplayTime(timeMs)
     lastUpdateRef.current = Date.now()
+    if (timeMs > 0) {
+      expiredFiredRef.current = false
+    }
   }, [timeMs])
 
   // Local countdown when active
@@ -72,7 +78,14 @@ export function Clock({ timeMs, isActive, label, isPlayer }: ClockProps) {
       const elapsed = now - lastUpdateRef.current
       lastUpdateRef.current = now
 
-      setDisplayTime(prev => Math.max(0, prev - elapsed))
+      setDisplayTime(prev => {
+        const next = Math.max(0, prev - elapsed)
+        if (next <= 0 && prev > 0 && !expiredFiredRef.current) {
+          expiredFiredRef.current = true
+          onExpired?.()
+        }
+        return next
+      })
       animationFrameRef.current = requestAnimationFrame(tick)
     }
 

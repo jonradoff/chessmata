@@ -53,6 +53,7 @@ interface HUDProps {
   onStopWatching?: () => void
   onWatchGame?: (sessionId: string, isActive: boolean) => void
   onViewCompletedGame?: (sessionId: string) => void
+  onTimeExpired?: () => void
 }
 
 export function HUD({
@@ -89,6 +90,7 @@ export function HUD({
   onStopWatching,
   onWatchGame,
   onViewCompletedGame,
+  onTimeExpired,
 }: HUDProps) {
   const [showSettings, setShowSettings] = useState(false)
   const [showNewGame, setShowNewGame] = useState(false)
@@ -113,17 +115,10 @@ export function HUD({
     }
   }, [sessionId])
 
-  // Debug: Log whenever game or playerColor changes
-  useEffect(() => {
-    console.log('HUD props changed - game:', game?.status, 'playerColor:', playerColor, 'sessionId:', sessionId)
-  }, [game, playerColor, sessionId])
-
   // Show game summary when game ends
   useEffect(() => {
-    console.log('Game status effect:', { status: game?.status, prevGameStatus, hasShownSummary, showGameSummary })
     if (game?.status === 'complete' && (prevGameStatus === 'active' || prevGameStatus === null) && !hasShownSummary && !isWatchMode) {
       // Delay slightly to let state settle
-      console.log('Triggering game summary modal')
       setHasShownSummary(true)
       setTimeout(() => setShowGameSummary(true), 500)
     }
@@ -141,16 +136,13 @@ export function HUD({
   }
 
   const handleNewGameClick = () => {
-    console.log('New Game button clicked, opening modal')
     setShowNewGame(true)
   }
 
   const handleCreateGame = async () => {
-    console.log('Create Game button clicked')
     if (onNewGame) {
       try {
         await onNewGame()
-        console.log('Game created successfully')
       } catch (err) {
         console.error('Failed to create game:', err)
       }
@@ -181,16 +173,12 @@ export function HUD({
     if (onResign) {
       setIsEndingGame(true)
       try {
-        console.log('Before onResign - game:', game?.status, 'playerColor:', playerColor)
         await onResign()
-        console.log('After onResign - game:', game?.status, 'playerColor:', playerColor)
         setShowEndGame(false)
         // Explicitly show game summary after resignation
         // The useEffect may not trigger reliably due to state batching
         setHasShownSummary(true)
-        console.log('Setting showGameSummary to true in 300ms...')
         setTimeout(() => {
-          console.log('Timeout fired - setting showGameSummary to true')
           setShowGameSummary(true)
         }, 300)
       } catch (err) {
@@ -556,12 +544,14 @@ export function HUD({
                   timeMs={opponentTime}
                   isActive={isActiveGame && game.currentTurn !== playerColor}
                   label={opponentName}
+                  onExpired={onTimeExpired}
                 />
                 <Clock
                   timeMs={myTime}
                   isActive={isActiveGame && game.currentTurn === playerColor}
                   label="You"
                   isPlayer
+                  onExpired={onTimeExpired}
                 />
               </div>
             )
@@ -689,10 +679,6 @@ export function HUD({
         />
       )}
 
-      {(() => {
-        console.log('GameSummary render check:', { showGameSummary, hasGame: !!game, playerColor, gameStatus: game?.status })
-        return null
-      })()}
       {showGameSummary && game && playerColor && (
         <GameSummaryModal
           game={game}

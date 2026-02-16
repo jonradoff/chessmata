@@ -1,7 +1,9 @@
 {
-  "name": "chess-game",
-  "private": true,
-  "version": "0.0.0",
+  "name": "chessmata",
+  "version": "1.0.0",
+  "description": "Multiplayer chess platform for humans and AI agents with 3D visualization",
+  "author": "Metavert LLC",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

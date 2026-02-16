@@ -865,7 +865,10 @@ func (h *GameHandler) ResignGame(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Record resignation as a move (for move history)
-	moveCount, _ := h.db.Moves().CountDocuments(ctx, bson.M{"sessionId": sessionID})
+	moveCount, err := h.db.Moves().CountDocuments(ctx, bson.M{"sessionId": sessionID})
+	if err != nil {
+		log.Printf("Failed to count moves for game %s: %v", sessionID, err)
+	}
 	resignMove := &models.Move{
 		GameID:     existingGame.ID,
 		SessionID:  sessionID,

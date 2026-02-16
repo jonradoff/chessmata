@@ -355,7 +355,11 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 	// Check if refresh token is in database and not revoked
 	tokenHash := hashToken(req.RefreshToken)
-	userID, _ := primitive.ObjectIDFromHex(claims.UserID)
+	userID, err := primitive.ObjectIDFromHex(claims.UserID)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid token claims")
+		return
+	}
 
 	var storedToken models.RefreshToken
 	err = h.db.RefreshTokens().FindOne(r.Context(), bson.M{
@@ -650,7 +654,14 @@ func respondWithError(w http.ResponseWriter, code int, message string) {
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-	response, _ := json.Marshal(payload)
+	response, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("Failed to marshal JSON response: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error":"internal server error"}`))
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)

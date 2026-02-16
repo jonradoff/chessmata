@@ -1,5 +1,4 @@
-// In production, use relative URLs since the backend serves the frontend
-const API_BASE = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:9029/api' : '/api')
+import { API_BASE } from './config'
 
 // Build headers with optional auth token from localStorage
 function authHeaders(): Record<string, string> {

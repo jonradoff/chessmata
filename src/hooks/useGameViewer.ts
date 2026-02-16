@@ -1,12 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { getGame, getMoves, type Game, type Move } from '../api/gameApi'
-
-function getWsBase() {
-  if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL
-  if (window.location.hostname === 'localhost') return 'ws://localhost:9029/ws'
-  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${wsProtocol}//${window.location.host}/ws`
-}
+import { WS_BASE } from '../api/config'
 
 export interface GameViewerState {
   sessionId: string | null
@@ -75,8 +69,7 @@ export function useGameViewer() {
       }))
 
       // Connect as spectator
-      const wsBase = getWsBase()
-      const ws = new WebSocket(`${wsBase}/games/${sessionId}?spectator=true`)
+      const ws = new WebSocket(`${WS_BASE}/games/${sessionId}?spectator=true`)
 
       ws.onmessage = (event) => {
         try {
@@ -122,13 +115,9 @@ export function useGameViewer() {
         }
       }
 
-      ws.onerror = () => {
-        console.warn('Spectator WebSocket error')
-      }
+      ws.onerror = () => {}
 
-      ws.onclose = () => {
-        console.log('Spectator WebSocket closed')
-      }
+      ws.onclose = () => {}
 
       wsRef.current = ws
     } catch (err) {

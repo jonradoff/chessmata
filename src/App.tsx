@@ -79,11 +79,6 @@ function App() {
     return { page: 'main' as const, token: null, accessToken: null, refreshToken: null }
   }, [route])
 
-  // Debug: Log isRestoring state
-  useEffect(() => {
-    console.log('App.tsx - isRestoring:', onlineGame.isRestoring, 'sessionId:', onlineGame.sessionId)
-  }, [onlineGame.isRestoring, onlineGame.sessionId])
-
   // Sync board state from server whenever game updates (online or watched)
   useEffect(() => {
     const boardState = gameViewer.game?.boardState || onlineGame.game?.boardState
@@ -149,8 +144,11 @@ function App() {
     // Optimistic move
     gameState.movePiece(pieceId, toFile, toRank)
 
+    const promotionMap: Record<string, string> = { queen: 'q', rook: 'r', bishop: 'b', knight: 'n' }
+    const promotion = promotionMap[piece] || 'q'
+
     try {
-      const response = await onlineGame.makeMove(from, to, piece)
+      const response = await onlineGame.makeMove(from, to, promotion)
       if (!response.success) {
         console.error('Promotion move rejected by server:', response.error)
       }
@@ -264,6 +262,7 @@ function App() {
           isActive ? gameViewer.watchGame(sessionId) : gameViewer.viewCompletedGame(sessionId)
         }
         onViewCompletedGame={gameViewer.viewCompletedGame}
+        onTimeExpired={onlineGame.refreshGame}
       />
       {onlineGame.connectionError && (
         <ConnectionErrorModal

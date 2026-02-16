@@ -40,15 +40,15 @@ func NewStaleGameCleanupService(
 		gameCompletionService: completionService,
 		broadcaster:           broadcaster,
 		stopCh:                make(chan struct{}),
-		interval:              10 * time.Minute,
-		staleThreshold:        10 * time.Minute,
+		interval:              1 * time.Minute,
+		staleThreshold:        30 * time.Second,
 	}
 }
 
 // Start begins the periodic cleanup loop in a background goroutine.
 func (s *StaleGameCleanupService) Start() {
 	go s.runCleanupLoop()
-	log.Println("Stale game cleanup service started (interval: 10m, threshold: 10m)")
+	log.Println("Stale game cleanup service started (interval: 1m, threshold: 30s)")
 }
 
 // Stop signals the cleanup loop to exit.
@@ -99,7 +99,11 @@ func (s *StaleGameCleanupService) runCleanupPass() {
 }
 
 func (s *StaleGameCleanupService) tryAcquireLock(ctx context.Context) bool {
-	hostname, _ := os.Hostname()
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.Printf("Failed to get hostname: %v", err)
+		hostname = "unknown"
+	}
 
 	now := time.Now()
 	lockExpiry := now.Add(5 * time.Minute)
@@ -121,7 +125,7 @@ func (s *StaleGameCleanupService) tryAcquireLock(ctx context.Context) bool {
 	}
 
 	opts := options.FindOneAndUpdate().SetUpsert(true)
-	err := s.db.CleanupLocks().FindOneAndUpdate(ctx, filter, update, opts).Err()
+	err = s.db.CleanupLocks().FindOneAndUpdate(ctx, filter, update, opts).Err()
 	if err != nil {
 		// If err is not nil, another server already holds the lock (duplicate key or no match)
 		return false
