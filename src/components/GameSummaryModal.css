@@ -1,0 +1,314 @@
+/* Game Summary Modal - needs its own overlay since HUD has pointer-events: none */
+.game-summary-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  pointer-events: auto;
+}
+
+.game-summary-modal {
+  position: relative;
+  background: rgba(20, 20, 30, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 0;
+  max-width: 480px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: summarySlideIn 0.3s ease-out;
+}
+
+@keyframes summarySlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.result-header {
+  padding: 24px;
+  text-align: center;
+}
+
+.result-header.victory {
+  background: linear-gradient(135deg, rgba(50, 120, 50, 0.4), rgba(80, 180, 80, 0.2));
+  border-bottom: 2px solid rgba(100, 200, 100, 0.5);
+}
+
+.result-header.defeat {
+  background: linear-gradient(135deg, rgba(120, 50, 50, 0.4), rgba(180, 80, 80, 0.2));
+  border-bottom: 2px solid rgba(200, 100, 100, 0.5);
+}
+
+.result-header.draw {
+  background: linear-gradient(135deg, rgba(100, 100, 50, 0.4), rgba(180, 180, 80, 0.2));
+  border-bottom: 2px solid rgba(200, 200, 100, 0.5);
+}
+
+.result-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.result-header.victory h2 {
+  color: #64ff64;
+}
+
+.result-header.defeat h2 {
+  color: #ff6464;
+}
+
+.result-header.draw h2 {
+  color: #ffff64;
+}
+
+.summary-content {
+  padding: 24px;
+}
+
+.stats-section {
+  margin-bottom: 24px;
+}
+
+.stats-section h3,
+.elo-section h3 {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.stat-value.capitalize {
+  text-transform: capitalize;
+}
+
+.players-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+}
+
+.player-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.player-card.you {
+  text-align: left;
+}
+
+.player-card.opponent {
+  text-align: right;
+}
+
+.player-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.player-card.opponent .player-header {
+  justify-content: flex-end;
+}
+
+.player-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.color-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: capitalize;
+  font-weight: 600;
+}
+
+.color-badge.white {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.color-badge.black {
+  background: rgba(100, 100, 100, 0.3);
+  color: #aaa;
+}
+
+.player-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.player-elo {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.vs-divider {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+}
+
+.elo-section {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.elo-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.elo-change {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.elo-change.positive {
+  color: #64ff64;
+}
+
+.elo-change.negative {
+  color: #ff6464;
+}
+
+.elo-arrow {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.elo-arrow svg {
+  width: 24px;
+  height: 24px;
+}
+
+.new-elo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.new-elo-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.new-elo-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.unranked-note {
+  text-align: center;
+  padding: 16px;
+  background: rgba(100, 150, 255, 0.1);
+  border: 1px solid rgba(100, 150, 255, 0.3);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+}
+
+.summary-actions {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-btn {
+  flex: 1;
+  padding: 14px 20px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, rgba(100, 200, 100, 0.3), rgba(80, 180, 80, 0.2));
+  border: 1px solid rgba(100, 200, 100, 0.5);
+  color: #64ff64;
+}
+
+.action-btn.primary:hover {
+  background: linear-gradient(135deg, rgba(100, 200, 100, 0.4), rgba(80, 180, 80, 0.3));
+  border-color: rgba(100, 200, 100, 0.7);
+  transform: translateY(-1px);
+}
+
+.action-btn.secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.action-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.action-btn:active {
+  transform: translateY(1px);
+}

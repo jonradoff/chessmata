@@ -35,8 +35,8 @@ func NewJWTService(accessSecret, refreshSecret string) *JWTService {
 	return &JWTService{
 		accessSecret:  []byte(accessSecret),
 		refreshSecret: []byte(refreshSecret),
-		accessTTL:     15 * time.Minute,
-		refreshTTL:    7 * 24 * time.Hour,
+		accessTTL:     30 * 24 * time.Hour, // 30 days - keep users logged in
+		refreshTTL:    90 * 24 * time.Hour, // 90 days
 	}
 }
 

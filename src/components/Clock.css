@@ -1,0 +1,191 @@
+/* Clock Component Styles */
+
+.clock {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  transition: all 0.2s ease;
+}
+
+.clock__label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.clock__time {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #fff;
+  min-width: 4.5rem;
+  text-align: right;
+}
+
+.clock__indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: pulse 1s infinite;
+}
+
+/* Active state - currently ticking */
+.clock--active {
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.clock--active .clock__time {
+  color: #4ade80;
+}
+
+/* Player's own clock */
+.clock--player {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.clock--player.clock--active {
+  background: rgba(74, 222, 128, 0.2);
+  border-color: rgba(74, 222, 128, 0.4);
+}
+
+/* Low time warning (< 1 minute) */
+.clock--low .clock__time {
+  color: #fbbf24;
+}
+
+.clock--low .clock__indicator {
+  background: #fbbf24;
+}
+
+.clock--low.clock--active {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+/* Critical time (< 10 seconds) */
+.clock--critical .clock__time {
+  color: #ef4444;
+  animation: blink 0.5s infinite;
+}
+
+.clock--critical .clock__indicator {
+  background: #ef4444;
+  animation: pulse 0.3s infinite;
+}
+
+.clock--critical.clock--active {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Expired (time = 0) */
+.clock--expired {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.clock--expired .clock__time {
+  color: #ef4444;
+}
+
+.clock--expired .clock__indicator {
+  display: none;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Time Control Badge */
+.time-control-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.time-control-badge--unlimited {
+  background: rgba(156, 163, 175, 0.15);
+  border-color: rgba(156, 163, 175, 0.3);
+  color: #9ca3af;
+}
+
+.time-control-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Clocks Panel (for HUD integration) */
+.clocks-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.clocks-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.clocks-panel__clocks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .clock {
+    padding: 0.375rem 0.5rem;
+  }
+
+  .clock__time {
+    font-size: 1rem;
+    min-width: 3.5rem;
+  }
+
+  .clock__label {
+    font-size: 0.65rem;
+  }
+
+  .time-control-badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+  }
+}

@@ -1,6 +1,6 @@
 import { useRef, useEffect, useMemo } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, Environment } from '@react-three/drei'
 import * as THREE from 'three'
 import gsap from 'gsap'
 import { ChessBoard } from './ChessBoard'
@@ -10,14 +10,24 @@ import type { Settings } from '../hooks/useSettings'
 import type { MakeMoveResponse } from '../api/gameApi'
 import type { PieceType } from '../utils/chessRules'
 
+export interface PendingPromotion {
+  from: string
+  to: string
+  pieceId: string
+  isWhite: boolean
+  toFile: number
+  toRank: number
+}
+
 export interface OnlineContext {
   sessionId: string | null
   playerId: string | null
   playerColor: 'white' | 'black' | null
   currentTurn: 'white' | 'black' | null
   gameStatus: 'waiting' | 'active' | 'complete' | null
-  makeMove: (from: string, to: string, promotion?: string) => Promise<MakeMoveResponse>
+  makeMove?: (from: string, to: string, promotion?: string) => Promise<MakeMoveResponse>
   onInvalidMove?: (info: { reason: string; pieceType: PieceType }) => void
+  onPendingPromotion?: (info: PendingPromotion) => void
 }
 
 interface ChessSceneProps {
@@ -35,6 +45,10 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
   const groupRef = useRef<THREE.Group>(null)
   const morphProgressRef = useRef({ value: is3D ? 1 : 0 })
   const prevIs3DRef = useRef(is3D)
+
+  // Rotate board when playing as white so player's pieces are at the bottom
+  // Default view has black at bottom, so rotate 180° for white players
+  const boardRotation = onlineContext?.playerColor === 'white' ? Math.PI : 0
 
   // Camera positions
   const camera3D = useMemo(() => ({ position: new THREE.Vector3(0, 8, 12), target: new THREE.Vector3(0, 0, 0) }), [])
@@ -148,52 +162,121 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
 
   }, [is3D, camera, camera3D, camera2D, onTransitionComplete])
 
+  // Deselect lifted piece on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && gameState.selectedPieceId) {
+        gameState.selectPiece(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [gameState.selectedPieceId, gameState.selectPiece])
+
   useFrame(() => {
     if (controlsRef.current) {
       controlsRef.current.update()
     }
   })
 
+  const lighting = settings.lighting
+
   return (
     <>
-      {/* Ambient light for overall illumination */}
-      <ambientLight intensity={0.5} />
+      {/* Environment map for reflections - off for soft/dramatic to isolate */}
+      {lighting !== 'soft' && (
+        <Environment preset="studio" environmentIntensity={lighting === 'dramatic' ? 0.02 : 0.1} />
+      )}
 
-      {/* Main directional light (sun-like) from front-right */}
-      <directionalLight
-        position={[8, 12, 10]}
-        intensity={1.0}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-far={50}
-        shadow-camera-left={-10}
-        shadow-camera-right={10}
-        shadow-camera-top={10}
-        shadow-camera-bottom={-10}
-      />
+      {/* === STANDARD LIGHTING === */}
+      {lighting === 'standard' && (
+        <>
+          <hemisphereLight args={['#b1c4e0', '#8b7355', 0.4]} />
+          <directionalLight
+            position={[3, 14, 6]}
+            intensity={1.0}
+            castShadow
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
+            shadow-camera-far={50}
+            shadow-camera-left={-10}
+            shadow-camera-right={10}
+            shadow-camera-top={10}
+            shadow-camera-bottom={-10}
+          />
+          <directionalLight position={[8, 10, 2]} intensity={0.4} />
+          <directionalLight position={[-6, 8, 3]} intensity={0.3} />
+          <pointLight position={[0, 6, -8]} intensity={0.3} color="#4a90d9" />
+        </>
+      )}
 
-      {/* Front fill light - illuminates black pieces facing the player */}
-      <directionalLight
-        position={[0, 8, 12]}
-        intensity={0.8}
-        color="#ffffff"
-      />
+      {/* === SOFT DIFFUSE — no directional lights, hemisphere only === */}
+      {lighting === 'soft' && (
+        <>
+          <hemisphereLight args={['#d4dce8', '#a89880', 0.9]} />
+          <ambientLight intensity={0.3} />
+        </>
+      )}
 
-      {/* Fill light from left side */}
-      <directionalLight
-        position={[-8, 6, 5]}
-        intensity={0.4}
-      />
+      {/* === SINGLE OVERHEAD — straight down === */}
+      {lighting === 'overhead' && (
+        <>
+          <hemisphereLight args={['#b1c4e0', '#8b7355', 0.2]} />
+          <directionalLight
+            position={[0, 20, 0]}
+            intensity={1.2}
+            castShadow
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
+            shadow-camera-far={50}
+            shadow-camera-left={-10}
+            shadow-camera-right={10}
+            shadow-camera-top={10}
+            shadow-camera-bottom={-10}
+          />
+        </>
+      )}
 
-      {/* Back rim light for dramatic effect on white pieces */}
-      <pointLight
-        position={[0, 8, -8]}
-        intensity={0.4}
-        color="#4a90d9"
-      />
+      {/* === FRONT LIT — light from player's perspective === */}
+      {lighting === 'front' && (
+        <>
+          <hemisphereLight args={['#b1c4e0', '#8b7355', 0.3]} />
+          <directionalLight
+            position={[0, 8, 14]}
+            intensity={1.0}
+            castShadow
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
+            shadow-camera-far={50}
+            shadow-camera-left={-10}
+            shadow-camera-right={10}
+            shadow-camera-top={10}
+            shadow-camera-bottom={-10}
+          />
+          <directionalLight position={[5, 6, 10]} intensity={0.3} />
+        </>
+      )}
 
-      <group ref={groupRef}>
+      {/* === DRAMATIC SIDE — strong single side light for specular testing === */}
+      {lighting === 'dramatic' && (
+        <>
+          <hemisphereLight args={['#b1c4e0', '#8b7355', 0.15]} />
+          <directionalLight
+            position={[-10, 6, 2]}
+            intensity={1.5}
+            castShadow
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
+            shadow-camera-far={50}
+            shadow-camera-left={-10}
+            shadow-camera-right={10}
+            shadow-camera-top={10}
+            shadow-camera-bottom={-10}
+          />
+        </>
+      )}
+
+      <group ref={groupRef} rotation-y={boardRotation}>
         <ChessBoard
           morphProgress={morphProgressRef}
           gameState={gameState}
@@ -205,6 +288,8 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
           gameState={gameState}
           is3D={is3D}
           onlineContext={onlineContext}
+          pieceModel={settings.pieceModel}
+          pieceMaterial={settings.pieceMaterial}
         />
       </group>
 

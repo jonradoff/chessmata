@@ -2,8 +2,12 @@ package middleware
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
+	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"chess-game/internal/auth"
 	"chess-game/internal/db"
@@ -51,7 +55,19 @@ func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 
 		tokenString := parts[1]
 
-		// Validate token
+		// Check if this is an API key (cmk_ prefix)
+		if strings.HasPrefix(tokenString, "cmk_") {
+			user := m.authenticateApiKey(r.Context(), tokenString)
+			if user == nil {
+				http.Error(w, "Invalid API key", http.StatusUnauthorized)
+				return
+			}
+			ctx := context.WithValue(r.Context(), UserContextKey, user)
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
+		}
+
+		// Validate JWT token
 		claims, err := m.jwtService.ValidateAccessToken(tokenString)
 		if err != nil {
 			if err == auth.ErrExpiredToken {
@@ -59,6 +75,12 @@ func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 				return
 			}
 			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		// Check if this access token has been revoked (e.g. user logged out)
+		if m.isTokenRevoked(r.Context(), tokenString) {
+			http.Error(w, "Token has been revoked", http.StatusUnauthorized)
 			return
 		}
 
@@ -110,10 +132,30 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 
 		tokenString := parts[1]
 
-		// Validate token
+		// Check if this is an API key (cmk_ prefix)
+		if strings.HasPrefix(tokenString, "cmk_") {
+			user := m.authenticateApiKey(r.Context(), tokenString)
+			if user != nil {
+				ctx := context.WithValue(r.Context(), UserContextKey, user)
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
+			// Invalid API key, continue without user
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Validate JWT token
 		claims, err := m.jwtService.ValidateAccessToken(tokenString)
 		if err != nil {
 			// Invalid token, continue without user
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Check if this access token has been revoked (e.g. user logged out)
+		if m.isTokenRevoked(r.Context(), tokenString) {
+			// Revoked token, continue without user
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -145,6 +187,47 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 		ctx := context.WithValue(r.Context(), UserContextKey, &user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+// authenticateApiKey hashes the token and looks up the API key + user
+func (m *AuthMiddleware) authenticateApiKey(ctx context.Context, token string) *models.User {
+	hash := sha256.Sum256([]byte(token))
+	keyHash := base64.StdEncoding.EncodeToString(hash[:])
+
+	var apiKey models.ApiKey
+	err := m.db.ApiKeys().FindOne(ctx, bson.M{"keyHash": keyHash}).Decode(&apiKey)
+	if err != nil {
+		return nil
+	}
+
+	var user models.User
+	err = m.db.Users().FindOne(ctx, bson.M{"_id": apiKey.UserID}).Decode(&user)
+	if err != nil || !user.IsActive {
+		return nil
+	}
+
+	// Update lastUsedAt in background
+	go func() {
+		now := time.Now()
+		m.db.ApiKeys().UpdateOne(context.Background(), bson.M{"_id": apiKey.ID}, bson.M{
+			"$set": bson.M{"lastUsedAt": now},
+		})
+	}()
+
+	return &user
+}
+
+// isTokenRevoked checks if the given raw token has been revoked (e.g. on logout).
+func (m *AuthMiddleware) isTokenRevoked(ctx context.Context, rawToken string) bool {
+	hash := sha256.Sum256([]byte(rawToken))
+	tokenHash := base64.StdEncoding.EncodeToString(hash[:])
+
+	count, err := m.db.RevokedTokens().CountDocuments(ctx, bson.M{"tokenHash": tokenHash})
+	if err != nil {
+		log.Printf("Warning: revoked-token lookup failed: %v", err)
+		return false // fail-open to avoid locking everyone out on DB hiccup
+	}
+	return count > 0
 }
 
 // GetUserFromContext retrieves the authenticated user from the request context

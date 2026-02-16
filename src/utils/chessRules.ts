@@ -131,11 +131,56 @@ function isValidQueenMove(board: Board, piece: Piece, to: Position): boolean {
   return isValidBishopMove(board, piece, to) || isValidRookMove(board, piece, to)
 }
 
-// Validate king move (excluding castling check for now)
-function isValidKingMove(piece: Piece, to: Position): boolean {
+// Validate king move (including castling)
+function isValidKingMove(board: Board, piece: Piece, to: Position): boolean {
   const fileDiff = Math.abs(to.file - piece.file)
   const rankDiff = Math.abs(to.rank - piece.rank)
-  return fileDiff <= 1 && rankDiff <= 1 && (fileDiff > 0 || rankDiff > 0)
+
+  // Normal king move: 1 square any direction
+  if (fileDiff <= 1 && rankDiff <= 1 && (fileDiff > 0 || rankDiff > 0)) {
+    return true
+  }
+
+  // Castling: king moves 2 squares horizontally, same rank
+  if (fileDiff === 2 && rankDiff === 0) {
+    const isWhite = piece.isWhite
+    const expectedRank = isWhite ? 0 : 7
+    if (piece.rank !== expectedRank) return false
+
+    const isKingside = to.file > piece.file
+
+    // Check castling rights
+    if (isKingside) {
+      if (isWhite && !board.castlingRights.whiteKingside) return false
+      if (!isWhite && !board.castlingRights.blackKingside) return false
+    } else {
+      if (isWhite && !board.castlingRights.whiteQueenside) return false
+      if (!isWhite && !board.castlingRights.blackQueenside) return false
+    }
+
+    // Check king is not in check
+    if (isSquareUnderAttack(board, piece.file, piece.rank, !isWhite)) return false
+
+    // Check rook exists at the corner square
+    const rookFile = isKingside ? 7 : 0
+    const rook = getPieceAt(board, rookFile, piece.rank)
+    if (!rook || rook.type !== 'rook' || rook.isWhite !== isWhite) return false
+
+    // Check path between king and rook is clear
+    const direction = isKingside ? 1 : -1
+    for (let f = piece.file + direction; f !== rookFile; f += direction) {
+      if (getPieceAt(board, f, piece.rank)) return false
+    }
+
+    // Check intermediate and destination squares not under attack
+    const midFile = piece.file + direction
+    if (isSquareUnderAttack(board, midFile, piece.rank, !isWhite)) return false
+    if (isSquareUnderAttack(board, to.file, piece.rank, !isWhite)) return false
+
+    return true
+  }
+
+  return false
 }
 
 // Find the king of the given color
@@ -174,8 +219,12 @@ function isSquareUnderAttack(board: Board, file: number, rank: number, byWhite: 
           return isValidRookMove(tempBoard, piece, { file, rank })
         case 'queen':
           return isValidQueenMove(tempBoard, piece, { file, rank })
-        case 'king':
-          return isValidKingMove(piece, { file, rank })
+        case 'king': {
+          // For attack checks, only consider 1-square king moves (not castling)
+          const fd = Math.abs(file - piece.file)
+          const rd = Math.abs(rank - piece.rank)
+          return fd <= 1 && rd <= 1 && (fd > 0 || rd > 0)
+        }
         default:
           return false
       }
@@ -197,7 +246,9 @@ export function isInCheck(board: Board, isWhite: boolean): boolean {
 
 // Make a move on the board and return the new board state
 function makeMove(board: Board, from: Position, to: Position): Board {
-  const newPieces = board.pieces
+  const movingPiece = getPieceAt(board, from.file, from.rank)
+
+  let newPieces = board.pieces
     .filter(p => !(p.file === to.file && p.rank === to.rank)) // Remove captured piece
     .map(p => {
       if (p.file === from.file && p.rank === from.rank) {
@@ -205,6 +256,26 @@ function makeMove(board: Board, from: Position, to: Position): Board {
       }
       return p
     })
+
+  // Handle castling: also move the rook
+  if (movingPiece?.type === 'king' && Math.abs(to.file - from.file) === 2) {
+    const isKingside = to.file > from.file
+    const rookFromFile = isKingside ? 7 : 0
+    const rookToFile = isKingside ? 5 : 3
+    newPieces = newPieces.map(p => {
+      if (p.file === rookFromFile && p.rank === from.rank && p.type === 'rook') {
+        return { ...p, file: rookToFile }
+      }
+      return p
+    })
+  }
+
+  // Handle en passant capture: remove the captured pawn
+  if (movingPiece?.type === 'pawn' && board.enPassantSquare &&
+      to.file === board.enPassantSquare.file && to.rank === board.enPassantSquare.rank) {
+    const capturedPawnRank = from.rank
+    newPieces = newPieces.filter(p => !(p.file === to.file && p.rank === capturedPawnRank))
+  }
 
   return {
     ...board,
@@ -242,7 +313,7 @@ function getLegalMovesForPiece(board: Board, piece: Piece): Position[] {
           case 'queen':
             return isValidQueenMove(board, piece, { file, rank })
           case 'king':
-            return isValidKingMove(piece, { file, rank })
+            return isValidKingMove(board, piece, { file, rank })
           default:
             return false
         }
@@ -363,7 +434,7 @@ export function isValidMove(board: Board, from: Position, to: Position): MoveVal
       }
       break
     case 'king':
-      isValid = isValidKingMove(piece, to)
+      isValid = isValidKingMove(board, piece, to)
       break
   }
 

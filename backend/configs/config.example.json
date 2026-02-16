@@ -20,5 +20,8 @@
     "googleClientId": "${GOOGLE_CLIENT_ID}",
     "googleClientSecret": "${GOOGLE_CLIENT_SECRET}",
     "googleRedirectUrl": "http://localhost:9029/api/auth/google/callback"
+  },
+  "email": {
+    "resendApiKey": "${RESEND_API_KEY}"
   }
 }

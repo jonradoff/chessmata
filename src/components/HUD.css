@@ -48,7 +48,9 @@
 
 .about-button,
 .login-button,
-.profile-button {
+.profile-button,
+.leaderboard-button,
+.watch-button {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -67,7 +69,9 @@
 
 .about-button:hover,
 .login-button:hover,
-.profile-button:hover {
+.profile-button:hover,
+.leaderboard-button:hover,
+.watch-button:hover {
   background: rgba(30, 30, 45, 0.95);
   border-color: rgba(100, 150, 255, 0.5);
   box-shadow: 0 4px 25px rgba(100, 150, 255, 0.2);
@@ -76,7 +80,9 @@
 
 .about-button:active,
 .login-button:active,
-.profile-button:active {
+.profile-button:active,
+.leaderboard-button:active,
+.watch-button:active {
   transform: translateY(0);
 }
 
@@ -173,10 +179,10 @@
   font-size: 12px;
 }
 
-/* New Game, Leave Game, and Resign buttons */
+/* New Game, Leave Game, End Game buttons */
 .new-game-button,
 .leave-game-button,
-.resign-button {
+.end-game-button {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -216,11 +222,11 @@
   transform: translateY(-2px);
 }
 
-.resign-button {
+.end-game-button {
   border-color: rgba(255, 150, 50, 0.3);
 }
 
-.resign-button:hover {
+.end-game-button:hover {
   background: rgba(50, 35, 20, 0.95);
   border-color: rgba(255, 150, 50, 0.6);
   box-shadow: 0 4px 25px rgba(255, 150, 50, 0.2);
@@ -236,18 +242,22 @@
   background: rgba(20, 20, 30, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 12px;
-  padding: 16px 24px;
+  padding: 10px 20px;
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   pointer-events: auto;
   text-align: center;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
 }
 
 .game-status-header {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .player-color {
@@ -264,6 +274,12 @@
   color: #a0a0a0;
 }
 
+.opponent-name {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
 .game-complete {
   color: #ff9900;
   font-weight: 600;
@@ -273,15 +289,19 @@
 }
 
 .share-section {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding-left: 16px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .share-text {
-  margin: 0 0 10px 0;
+  margin: 0;
   color: rgba(255, 255, 255, 0.7);
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .copy-link-button {
@@ -302,7 +322,33 @@
 }
 
 .turn-indicator {
-  margin-top: 8px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.check-warning {
+  display: inline-block;
+  padding: 6px 14px;
+  background: rgba(255, 50, 50, 0.25);
+  border: 1px solid rgba(255, 80, 80, 0.5);
+  border-radius: 6px;
+  color: #ff5555;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: checkPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes checkPulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(255, 50, 50, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(255, 50, 50, 0.6);
+  }
 }
 
 .your-turn {
@@ -314,4 +360,68 @@
 .opponent-turn {
   color: rgba(255, 255, 255, 0.5);
   font-size: 14px;
+}
+
+.ranked-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, rgba(255, 180, 50, 0.3), rgba(255, 150, 30, 0.2));
+  border: 1px solid rgba(255, 180, 50, 0.5);
+  border-radius: 12px;
+  color: #ffb432;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.game-status-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+/* Clocks container in game status panel */
+.clocks-container {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.clocks-container .clock {
+  flex-direction: row;
+  gap: 8px;
+}
+
+.clocks-container .clock__label {
+  text-align: left;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Watch mode */
+.watch-mode-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, rgba(100, 200, 255, 0.3), rgba(80, 150, 255, 0.2));
+  border: 1px solid rgba(100, 200, 255, 0.5);
+  border-radius: 12px;
+  color: #64c8ff;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.watch-player-names {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
 }

@@ -1,0 +1,105 @@
+.email-verify-modal {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2px solid rgba(255, 193, 7, 0.3);
+  border-radius: 16px;
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.3s ease-out;
+}
+
+.email-verify-modal .modal-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.email-verify-modal .modal-header h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #ffc107;
+  font-weight: 600;
+}
+
+.email-verify-modal .modal-content {
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.email-verify-modal .verify-icon {
+  margin-bottom: 16px;
+  color: #ffc107;
+}
+
+.email-verify-modal .verify-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 16px 0;
+}
+
+.email-verify-modal .verify-message {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.email-verify-modal .verify-message strong {
+  color: #ffffff;
+}
+
+.email-verify-modal .verify-error {
+  color: #ff6b6b;
+  font-size: 14px;
+  margin: 12px 0 0 0;
+}
+
+.email-verify-modal .verify-success {
+  color: #4caf50;
+  font-size: 14px;
+  margin: 12px 0 0 0;
+}
+
+.email-verify-modal .modal-actions {
+  padding: 16px 24px 24px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.email-verify-modal .modal-button.secondary {
+  background: transparent;
+  border: 1px solid rgba(255, 193, 7, 0.4);
+  color: #ffc107;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.email-verify-modal .modal-button.secondary:hover:not(:disabled) {
+  background: rgba(255, 193, 7, 0.1);
+}
+
+.email-verify-modal .modal-button.secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.email-verify-modal .modal-button.primary {
+  background: linear-gradient(135deg, #ffc107, #ff9800);
+  border: none;
+  color: #1a1a2e;
+  padding: 10px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.email-verify-modal .modal-button.primary:hover {
+  opacity: 0.9;
+}

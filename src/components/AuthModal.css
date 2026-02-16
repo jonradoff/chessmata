@@ -10,6 +10,7 @@
   justify-content: center;
   z-index: 1001;
   backdrop-filter: blur(4px);
+  pointer-events: auto;
 }
 
 .auth-modal {
@@ -25,6 +26,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  pointer-events: auto;
 }
 
 .auth-modal .modal-header {
@@ -160,6 +162,58 @@
   margin-bottom: 20px;
 }
 
+.success-message {
+  padding: 12px 16px;
+  background: rgba(100, 200, 100, 0.1);
+  border: 1px solid rgba(100, 200, 100, 0.3);
+  border-radius: 8px;
+  color: #66cc66;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.forgot-password-link {
+  background: none;
+  border: none;
+  color: rgba(100, 150, 255, 0.8);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 16px;
+  text-align: left;
+  transition: color 0.2s;
+}
+
+.forgot-password-link:hover {
+  color: rgba(100, 150, 255, 1);
+  text-decoration: underline;
+}
+
+.forgot-password-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.back-to-login-button {
+  width: 100%;
+  padding: 12px 24px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.back-to-login-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
 .submit-button {
   width: 100%;
   padding: 14px 24px;
@@ -266,4 +320,50 @@
 
 .auth-modal .modal-content::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.4);
+}
+
+/* Input with status indicator */
+.input-with-status {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-status input {
+  flex: 1;
+  padding-right: 40px;
+}
+
+.input-with-status input.input-error {
+  border-color: rgba(255, 100, 100, 0.5);
+}
+
+.input-with-status input.input-success {
+  border-color: rgba(100, 200, 100, 0.5);
+}
+
+.input-status {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+}
+
+.input-status.checking {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.input-status.available {
+  color: #66cc66;
+}
+
+.input-status.unavailable {
+  color: #ff6666;
+}
+
+.field-error {
+  color: #ff6666;
+  font-size: 12px;
+  margin-top: 6px;
 }

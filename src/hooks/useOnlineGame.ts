@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import * as api from '../api/gameApi'
 
+export type DrawOfferResult = 'accepted' | 'declined' | 'auto_declined' | null
+
 export interface OnlineGameState {
   sessionId: string | null
   playerId: string | null
@@ -13,10 +15,23 @@ export interface OnlineGameState {
   error: string | null
   connectionError: string | null
   shareLink: string | null
+  lastOpponentMove: { from: string; to: string } | null
+  // Draw offer state
+  drawOfferPending: boolean        // true while our draw offer is pending (waiting for response)
+  drawOfferReceived: boolean       // true when opponent offered us a draw
+  drawOfferResult: DrawOfferResult // result after response
+  drawAutoDeclineMessage: string | null
 }
 
 const STORAGE_KEY = 'chess_game_session'
-const WS_BASE = import.meta.env.VITE_WS_URL || 'ws://localhost:9029/ws'
+// In production, use relative URLs based on current protocol/host
+const getWsBase = () => {
+  if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL
+  if (window.location.hostname === 'localhost') return 'ws://localhost:9029/ws'
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${wsProtocol}//${window.location.host}/ws`
+}
+const WS_BASE = getWsBase()
 
 interface StoredSession {
   sessionId: string
@@ -56,52 +71,141 @@ export function useOnlineGame() {
     error: null,
     connectionError: null,
     shareLink: null,
+    lastOpponentMove: null,
+    drawOfferPending: false,
+    drawOfferReceived: false,
+    drawOfferResult: null,
+    drawAutoDeclineMessage: null,
   })
 
   const hasInitialized = useRef(false)
   const wsRef = useRef<WebSocket | null>(null)
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const wsSessionRef = useRef<{ sessionId: string; playerId: string } | null>(null)
   const stateRef = useRef(state)
   stateRef.current = state
   const restoringStartTime = useRef<number | null>(null)
+  const mountedRef = useRef(true)
+  const reconnectAttemptRef = useRef(0)
 
   // WebSocket connection management
   const connectWebSocket = useCallback((sessionId: string, playerId: string) => {
-    // Close existing connection
+    // Close existing connection and cancel pending reconnect
     if (wsRef.current) {
       wsRef.current.close()
     }
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current)
+      reconnectTimerRef.current = null
+    }
 
-    const ws = new WebSocket(`${WS_BASE}/games/${sessionId}?playerId=${playerId}`)
+    wsSessionRef.current = { sessionId, playerId }
+
+    // Include auth token for authenticated player connections
+    const token = localStorage.getItem('chessmata_auth_token')
+    let wsUrl = `${WS_BASE}/games/${sessionId}?playerId=${playerId}`
+    if (token) {
+      wsUrl += `&token=${encodeURIComponent(token)}`
+    }
+    const ws = new WebSocket(wsUrl)
 
     ws.onopen = () => {
       console.log('WebSocket connected')
+      reconnectAttemptRef.current = 0
+      // On reconnect, refresh game state to catch anything we missed
+      if (stateRef.current.game) {
+        Promise.all([
+          api.getGame(sessionId),
+          api.getMoves(sessionId),
+        ]).then(([game, movesResponse]) => {
+          const moves = movesResponse.moves || []
+          // Determine last opponent move for arrow
+          let lastOpponentMove: { from: string; to: string } | null = null
+          if (moves.length > 0) {
+            const lastMove = moves[moves.length - 1]
+            if (lastMove.playerId !== playerId && lastMove.from && lastMove.to) {
+              lastOpponentMove = { from: lastMove.from, to: lastMove.to }
+            }
+          }
+          setState(prev => {
+            // Only update if fetched data is at least as current
+            if (prev.moves.length > moves.length) return prev
+            return {
+              ...prev,
+              game: { ...game, serverTime: Date.now() },
+              moves,
+              lastOpponentMove: lastOpponentMove || prev.lastOpponentMove,
+            }
+          })
+        }).catch(() => {
+          // Silently fail — we're reconnected, WS will deliver updates
+        })
+      }
     }
 
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data)
 
+        // Include serverTime with game data for clock sync
+        const gameWithServerTime = message.game ? {
+          ...message.game,
+          serverTime: message.serverTime || Date.now(),
+        } : null
+
         if (message.type === 'game_update') {
           setState(prev => ({
             ...prev,
-            game: message.game,
+            game: gameWithServerTime,
           }))
         } else if (message.type === 'move') {
+          const move = message.move
           setState(prev => ({
             ...prev,
-            game: message.game,
-            moves: [...prev.moves, message.move],
+            game: gameWithServerTime,
+            moves: [...prev.moves, move],
+            lastOpponentMove: move?.from && move?.to ? { from: move.from, to: move.to } : null,
           }))
         } else if (message.type === 'player_joined') {
           setState(prev => ({
             ...prev,
-            game: message.game,
+            game: gameWithServerTime,
           }))
         } else if (message.type === 'resignation') {
-          // Opponent resigned - update game state
           setState(prev => ({
             ...prev,
-            game: message.game,
+            game: gameWithServerTime,
+          }))
+        } else if (message.type === 'draw_offered') {
+          const drawFromColor = message.drawFromColor as string | undefined
+          const currentPlayerColor = stateRef.current.playerColor
+          const isFromOpponent = drawFromColor && drawFromColor !== currentPlayerColor
+          setState(prev => ({
+            ...prev,
+            game: gameWithServerTime || prev.game,
+            drawOfferReceived: isFromOpponent ? true : prev.drawOfferReceived,
+          }))
+        } else if (message.type === 'draw_declined') {
+          const autoDeclined = message.autoDeclined as boolean | undefined
+          setState(prev => ({
+            ...prev,
+            game: gameWithServerTime || prev.game,
+            // If we were the one who offered, show the decline result
+            drawOfferPending: false,
+            drawOfferResult: prev.drawOfferPending
+              ? (autoDeclined ? 'auto_declined' : 'declined')
+              : prev.drawOfferResult,
+            drawOfferReceived: false,
+          }))
+        } else if (message.type === 'game_over') {
+          // Check if this was a draw by agreement while we had a pending offer
+          const wasDrawAgreement = message.game?.winReason === 'agreement'
+          setState(prev => ({
+            ...prev,
+            game: gameWithServerTime,
+            drawOfferPending: false,
+            drawOfferReceived: false,
+            drawOfferResult: prev.drawOfferPending && wasDrawAgreement ? 'accepted' : prev.drawOfferResult,
           }))
         }
       } catch (err) {
@@ -111,6 +215,24 @@ export function useOnlineGame() {
 
     ws.onclose = () => {
       console.log('WebSocket disconnected')
+      // Auto-reconnect if game is still active and component is mounted
+      if (!mountedRef.current) return
+      const currentState = stateRef.current
+      const session = wsSessionRef.current
+      if (session && currentState.sessionId && currentState.game?.status === 'active') {
+        // Exponential backoff: 1s, 2s, 4s, 8s, capped at 15s
+        const attempt = reconnectAttemptRef.current
+        const delay = Math.min(1000 * Math.pow(2, attempt), 15000)
+        reconnectAttemptRef.current = attempt + 1
+        console.log(`Scheduling WebSocket reconnect in ${delay}ms (attempt ${attempt + 1})...`)
+        reconnectTimerRef.current = setTimeout(() => {
+          if (!mountedRef.current) return
+          if (wsSessionRef.current?.sessionId === session.sessionId) {
+            console.log('Reconnecting WebSocket...')
+            connectWebSocket(session.sessionId, session.playerId)
+          }
+        }, delay)
+      }
     }
 
     ws.onerror = (error) => {
@@ -121,6 +243,11 @@ export function useOnlineGame() {
   }, [])
 
   const disconnectWebSocket = useCallback(() => {
+    wsSessionRef.current = null
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current)
+      reconnectTimerRef.current = null
+    }
     if (wsRef.current) {
       wsRef.current.close()
       wsRef.current = null
@@ -155,6 +282,7 @@ export function useOnlineGame() {
         isLoading: false,
         game,
         moves: [],
+        lastOpponentMove: null,
       }))
 
       // Connect WebSocket
@@ -204,16 +332,33 @@ export function useOnlineGame() {
         restoringStartTime.current = null
       }
 
+      // Include serverTime with game for clock sync
+      const gameWithServerTime = {
+        ...response.game,
+        serverTime: response.serverTime || Date.now(),
+      }
+
+      // Set lastOpponentMove from move history so the arrow renders on reload
+      const moves = movesResponse.moves || []
+      let lastOpponentMove: { from: string; to: string } | null = null
+      if (moves.length > 0) {
+        const lastMove = moves[moves.length - 1]
+        if (lastMove.playerId !== response.playerId && lastMove.from && lastMove.to) {
+          lastOpponentMove = { from: lastMove.from, to: lastMove.to }
+        }
+      }
+
       setState(prev => ({
         ...prev,
         sessionId: response.sessionId,
         playerId: response.playerId,
         playerColor: response.color,
-        game: response.game,
-        moves: movesResponse.moves || [],
+        game: gameWithServerTime,
+        moves,
         shareLink: fullShareLink,
         isLoading: false,
         isRestoring: false,
+        lastOpponentMove,
       }))
 
       // Connect WebSocket
@@ -302,13 +447,15 @@ export function useOnlineGame() {
 
       console.log('After move - game.currentTurn:', game.currentTurn, 'playerColor:', state.playerColor)
 
-      setState(prev => ({
-        ...prev,
-        game,
-        moves: movesResponse.moves,
-        error: null,
-        isMoving: false,
-      }))
+      setState(prev => {
+        const fetchedMoves = movesResponse.moves || []
+        // If WebSocket already delivered more recent state (e.g. opponent responded
+        // very quickly), don't overwrite with our stale fetch results
+        if (prev.moves.length > fetchedMoves.length) {
+          return { ...prev, isMoving: false, error: null }
+        }
+        return { ...prev, game, moves: fetchedMoves, error: null, isMoving: false }
+      })
 
       return response
     } catch (err) {
@@ -349,29 +496,26 @@ export function useOnlineGame() {
       return
     }
 
-    console.log('Resigning game:', { sessionId, playerId })
+    console.log('resignGame: Starting resignation', { sessionId, playerId })
 
     try {
       const response = await api.resignGame(sessionId, playerId)
-      console.log('Resign response:', response)
+      console.log('resignGame: API response received', response)
       if (response.success) {
-        // Clear session and return to initial state
-        disconnectWebSocket()
-        clearStoredSession()
-        window.history.pushState({}, '', '/')
-        setState({
-          sessionId: null,
-          playerId: null,
-          playerColor: null,
-          game: null,
-          moves: [],
-          isLoading: false,
-          isMoving: false,
-          isRestoring: false,
-          error: null,
-          connectionError: null,
-          shareLink: null,
+        // Fetch the updated game state so we can show the game summary
+        // Do NOT clear state here - let the UI show the defeat dialog first
+        // The leaveGame function will be called when user dismisses the summary
+        console.log('resignGame: Fetching updated game state...')
+        const game = await api.getGame(sessionId)
+        console.log('resignGame: Got updated game', { status: game.status, winner: game.winner })
+        setState(prev => {
+          console.log('resignGame: Updating state with game, keeping sessionId:', prev.sessionId)
+          return {
+            ...prev,
+            game,
+          }
         })
+        console.log('resignGame: State updated, resignation complete')
       } else {
         console.error('Resign failed:', response.error)
         setState(prev => ({ ...prev, error: response.error || 'Failed to resign' }))
@@ -383,7 +527,85 @@ export function useOnlineGame() {
         error: err instanceof Error ? err.message : 'Failed to resign',
       }))
     }
-  }, [disconnectWebSocket])
+  }, [])
+
+  const offerDraw = useCallback(async () => {
+    const { sessionId, playerId } = stateRef.current
+    if (!sessionId || !playerId) return
+
+    setState(prev => ({ ...prev, drawOfferPending: true, drawOfferResult: null, drawAutoDeclineMessage: null }))
+
+    try {
+      const response = await api.offerDraw(sessionId, playerId)
+      if (!response.success) {
+        setState(prev => ({ ...prev, drawOfferPending: false, error: response.error || 'Failed to offer draw' }))
+        return
+      }
+      // If auto-declined, set result immediately (don't wait for WS)
+      if (response.autoDeclined) {
+        setState(prev => ({
+          ...prev,
+          drawOfferPending: false,
+          drawOfferResult: 'auto_declined',
+          drawAutoDeclineMessage: response.autoDeclineMessage || 'Your opponent has draw offers set to auto-decline.',
+        }))
+      }
+    } catch (err) {
+      setState(prev => ({
+        ...prev,
+        drawOfferPending: false,
+        error: err instanceof Error ? err.message : 'Failed to offer draw',
+      }))
+    }
+  }, [])
+
+  const respondToDraw = useCallback(async (accept: boolean) => {
+    const { sessionId, playerId } = stateRef.current
+    if (!sessionId || !playerId) return
+
+    setState(prev => ({ ...prev, drawOfferReceived: false }))
+
+    try {
+      await api.respondToDraw(sessionId, playerId, accept)
+      // Game state update will come via WS
+    } catch (err) {
+      setState(prev => ({
+        ...prev,
+        error: err instanceof Error ? err.message : 'Failed to respond to draw',
+      }))
+    }
+  }, [])
+
+  const claimDraw = useCallback(async (reason: api.DrawClaimReason): Promise<boolean> => {
+    const { sessionId, playerId } = stateRef.current
+    if (!sessionId || !playerId) return false
+
+    try {
+      const response = await api.claimDraw(sessionId, playerId, reason)
+      if (!response.success) {
+        setState(prev => ({ ...prev, error: response.error || 'Draw claim rejected' }))
+        return false
+      }
+      // Game state update will come via WS if successful
+      return true
+    } catch (err) {
+      setState(prev => ({
+        ...prev,
+        error: err instanceof Error ? err.message : 'Failed to claim draw',
+      }))
+      return false
+    }
+  }, [])
+
+  const clearDrawState = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      drawOfferPending: false,
+      drawOfferReceived: false,
+      drawOfferResult: null,
+      drawAutoDeclineMessage: null,
+    }))
+  }, [])
 
   const leaveGame = useCallback(() => {
     disconnectWebSocket()
@@ -401,6 +623,11 @@ export function useOnlineGame() {
       error: null,
       connectionError: null,
       shareLink: null,
+      lastOpponentMove: null,
+      drawOfferPending: false,
+      drawOfferReceived: false,
+      drawOfferResult: null,
+      drawAutoDeclineMessage: null,
     })
   }, [disconnectWebSocket])
 
@@ -463,11 +690,55 @@ export function useOnlineGame() {
 
   // Cleanup WebSocket on unmount
   useEffect(() => {
+    mountedRef.current = true
     return () => {
+      mountedRef.current = false
+      wsSessionRef.current = null
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current)
+        reconnectTimerRef.current = null
+      }
       if (wsRef.current) {
         wsRef.current.close()
+        wsRef.current = null
       }
     }
+  }, [])
+
+  // Re-fetch game state when user returns to the tab (catches games that
+  // ended while the tab was hidden and WebSocket messages were lost)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const { sessionId, playerId, game } = stateRef.current
+        if (sessionId && playerId && game) {
+          Promise.all([
+            api.getGame(sessionId),
+            api.getMoves(sessionId),
+          ]).then(([freshGame, movesResponse]) => {
+            const moves = movesResponse.moves || []
+            let lastOpponentMove: { from: string; to: string } | null = null
+            if (moves.length > 0) {
+              const lastMove = moves[moves.length - 1]
+              if (lastMove.playerId !== playerId && lastMove.from && lastMove.to) {
+                lastOpponentMove = { from: lastMove.from, to: lastMove.to }
+              }
+            }
+            setState(prev => {
+              if (prev.moves.length > moves.length) return prev
+              return {
+                ...prev,
+                game: { ...freshGame, serverTime: Date.now() },
+                moves,
+                lastOpponentMove: lastOpponentMove || prev.lastOpponentMove,
+              }
+            })
+          }).catch(() => {})
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [])
 
   return {
@@ -478,6 +749,10 @@ export function useOnlineGame() {
     refreshGame,
     leaveGame,
     resignGame,
+    offerDraw,
+    respondToDraw,
+    claimDraw,
+    clearDrawState,
     clearError,
     clearConnectionError,
   }

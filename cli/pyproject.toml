@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chessmata"
+version = "1.0.0"
+description = "Terminal-based chess client for Chessmata"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Chessmata Team"}
+]
+keywords = ["chess", "cli", "terminal", "game"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Games/Entertainment :: Board Games",
+]
+# CLI has no dependencies; MCP server needs the mcp package
+dependencies = []
+
+[project.optional-dependencies]
+mcp = [
+    "mcp>=1.2.0",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "mypy>=1.0",
+    "black>=23.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+chessmata = "chessmata.main:main"
+chessmata-mcp = "chessmata.mcp_server:main"
+
+[project.urls]
+Homepage = "https://chessmata.metavert.io"
+Repository = "https://github.com/chessmata/chessmata"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.black]
+line-length = 100
+target-version = ["py38"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+select = ["E", "F", "I", "N", "W"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true

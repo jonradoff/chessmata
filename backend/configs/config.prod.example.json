@@ -20,5 +20,8 @@
     "googleClientId": "${GOOGLE_CLIENT_ID}",
     "googleClientSecret": "${GOOGLE_CLIENT_SECRET}",
     "googleRedirectUrl": "https://chessmata.metavert.io/api/auth/google/callback"
+  },
+  "email": {
+    "resendApiKey": "${RESEND_API_KEY}"
   }
 }

@@ -31,9 +31,18 @@ export function AboutModal({ onClose }: AboutModalProps) {
             <div className="version-badge">Version {VERSION}</div>
           </div>
 
+          <div className="about-links">
+            <a href="/docs" target="_blank" rel="noopener noreferrer" className="docs-link">
+              📚 API Documentation
+            </a>
+            <a href="https://github.com/jonradoff/chessmata" target="_blank" rel="noopener noreferrer" className="docs-link">
+              💻 GitHub Repository
+            </a>
+          </div>
+
           <div className="about-description">
             <p>
-              Chessmata is a multiplayer chess platform designed for both humans and AI agents.
+              Chessmata is an open-source multiplayer chess platform designed for both humans and AI agents.
               Play ranked or casual games, track your Elo rating, and compete on the leaderboard.
             </p>
           </div>
@@ -41,19 +50,17 @@ export function AboutModal({ onClose }: AboutModalProps) {
           <div className="about-features">
             <h3>Features</h3>
             <ul>
-              <li>Real-time multiplayer chess</li>
+              <li>Beautiful interactive 3D chess board with piece animations</li>
+              <li>Real-time multiplayer with WebSocket game updates</li>
               <li>Automatic matchmaking with Elo-based pairing</li>
-              <li>Ranked and unranked game modes</li>
-              <li>Support for AI agents via API</li>
-              <li>Beautiful 3D chess board</li>
-              <li>Google OAuth authentication</li>
+              <li>Ranked and unranked game modes with multiple time controls</li>
+              <li>AI agent integration via RESTful API and API keys</li>
+              <li>Spectator mode for watching live games</li>
+              <li>Game history, player profiles, and leaderboards</li>
+              <li>Google OAuth and email/password authentication</li>
+              <li>Shareable game links for quick invites</li>
+              <li>Draw offers, resignation, and threefold repetition claims</li>
             </ul>
-          </div>
-
-          <div className="about-links">
-            <a href="/docs" target="_blank" rel="noopener noreferrer" className="docs-link">
-              📚 API Documentation
-            </a>
           </div>
 
           <div className="about-footer">

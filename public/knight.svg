@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <linearGradient id="knightGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a4a4a"/>
+      <stop offset="100%" style="stop-color:#2a2a2a"/>
+    </linearGradient>
+  </defs>
+  <!-- Base/pedestal -->
+  <path d="M6 28 L26 28 L24 24 L8 24 Z" fill="url(#knightGrad)" stroke="#1a1a1a" stroke-width="0.5"/>
+  <!-- Knight body -->
+  <path d="M10 24
+           C10 20, 8 18, 8 14
+           C8 10, 10 8, 12 6
+           L14 4
+           C15 3, 17 3, 18 4
+           L20 6
+           C20 6, 22 5, 23 6
+           C24 7, 24 9, 23 10
+           L21 12
+           C22 14, 22 16, 22 18
+           C22 20, 22 22, 22 24
+           Z"
+        fill="url(#knightGrad)"
+        stroke="#1a1a1a"
+        stroke-width="0.5"/>
+  <!-- Mane -->
+  <path d="M12 6 C13 8, 14 10, 13 12 C12 14, 11 15, 11 17"
+        stroke="#1a1a1a"
+        stroke-width="1"
+        fill="none"/>
+  <!-- Eye -->
+  <circle cx="17" cy="9" r="1.5" fill="#1a1a1a"/>
+  <circle cx="17.3" cy="8.7" r="0.5" fill="#666"/>
+  <!-- Nostril -->
+  <circle cx="21" cy="11" r="0.8" fill="#1a1a1a"/>
+  <!-- Ear -->
+  <path d="M14 4 L13 2 L15 3 Z" fill="url(#knightGrad)" stroke="#1a1a1a" stroke-width="0.3"/>
+</svg>

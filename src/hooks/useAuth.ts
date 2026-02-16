@@ -20,9 +20,46 @@ export function useAuth() {
     isAuthenticated: false,
   })
 
-  // Load user on mount if token exists
+  // Load user on mount if token exists, or handle OAuth callback
   useEffect(() => {
     const loadUser = async () => {
+      // Check for OAuth callback tokens in URL fragment (hash) first
+      // Tokens are passed via fragment to avoid logging in server/referrer
+      const urlParams = new URLSearchParams(window.location.hash.substring(1))
+      const urlAccessToken = urlParams.get('access_token')
+
+      if (urlAccessToken && window.location.pathname === '/auth/callback') {
+        // Store the token from OAuth callback
+        localStorage.setItem(TOKEN_KEY, urlAccessToken)
+
+        // Clean the URL
+        window.history.replaceState({}, '', '/')
+
+        try {
+          const user = await authApi.getCurrentUser(urlAccessToken)
+          setState({
+            user,
+            token: urlAccessToken,
+            isLoading: false,
+            error: null,
+            isAuthenticated: true,
+          })
+          return
+        } catch (err) {
+          console.error('Failed to load user from OAuth token:', err)
+          localStorage.removeItem(TOKEN_KEY)
+          setState({
+            user: null,
+            token: null,
+            isLoading: false,
+            error: 'Failed to complete login',
+            isAuthenticated: false,
+          })
+          return
+        }
+      }
+
+      // Otherwise check for existing token in localStorage
       const token = localStorage.getItem(TOKEN_KEY)
       if (!token) {
         setState(prev => ({ ...prev, isLoading: false }))

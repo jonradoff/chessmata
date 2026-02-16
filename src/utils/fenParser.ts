@@ -112,3 +112,47 @@ export function piecesToFEN(pieces: PieceState[]): string {
 
   return ranks.join('/')
 }
+
+/**
+ * Full FEN state including castling rights and en passant
+ */
+export interface FENState {
+  pieces: PieceState[]
+  whiteToMove: boolean
+  castlingRights: {
+    whiteKingside: boolean
+    whiteQueenside: boolean
+    blackKingside: boolean
+    blackQueenside: boolean
+  }
+  enPassantSquare: { file: number; rank: number } | null
+}
+
+/**
+ * Parses a full FEN string including turn, castling rights, and en passant
+ */
+export function parseFENState(fen: string): FENState {
+  const parts = fen.split(' ')
+  const pieces = parseFEN(fen)
+
+  const whiteToMove = (parts[1] || 'w') === 'w'
+
+  const castling = parts[2] || '-'
+  const castlingRights = {
+    whiteKingside: castling.includes('K'),
+    whiteQueenside: castling.includes('Q'),
+    blackKingside: castling.includes('k'),
+    blackQueenside: castling.includes('q'),
+  }
+
+  let enPassantSquare: { file: number; rank: number } | null = null
+  const ep = parts[3]
+  if (ep && ep !== '-') {
+    enPassantSquare = {
+      file: ep.charCodeAt(0) - 97,
+      rank: parseInt(ep[1]) - 1,
+    }
+  }
+
+  return { pieces, whiteToMove, castlingRights, enPassantSquare }
+}

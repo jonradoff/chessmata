@@ -380,6 +380,14 @@ func (b *Board) canCastle(from, to Position, isWhite bool) bool {
 		return false
 	}
 
+	// For queenside castling, also check that b-file (between rook and king destination) is clear
+	if direction == -1 {
+		bFile := 1
+		if b.GetPiece(Position{File: bFile, Rank: from.Rank}) != 0 {
+			return false
+		}
+	}
+
 	return true
 }
 
@@ -575,6 +583,16 @@ func (b *Board) MakeMove(from, to Position, promotion rune) *Board {
 		} else if from.File == 7 && from.Rank == 7 {
 			newBoard.CastleRights.BlackKingSide = false
 		}
+	}
+	// Also remove castling rights when a rook is captured at its starting square
+	if to.File == 0 && to.Rank == 0 {
+		newBoard.CastleRights.WhiteQueenSide = false
+	} else if to.File == 7 && to.Rank == 0 {
+		newBoard.CastleRights.WhiteKingSide = false
+	} else if to.File == 0 && to.Rank == 7 {
+		newBoard.CastleRights.BlackQueenSide = false
+	} else if to.File == 7 && to.Rank == 7 {
+		newBoard.CastleRights.BlackKingSide = false
 	}
 
 	// Update clocks

@@ -32,4 +32,13 @@ backend/.env
 
 # Backend compiled binaries
 backend/server
+backend/chess-server
 backend/cmd/server/server
+
+# Backend build output (copied from frontend dist during Docker build)
+backend/public/
+
+# Python build artifacts
+*.egg-info/
+__pycache__/
+*.pyc

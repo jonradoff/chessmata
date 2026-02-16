@@ -31,6 +31,15 @@ type Config struct {
 		GoogleClientSecret string `json:"googleClientSecret"`
 		GoogleRedirectURL  string `json:"googleRedirectUrl"`
 	} `json:"oauth"`
+	Email struct {
+		ResendAPIKey string `json:"resendApiKey"`
+	} `json:"email"`
+	Game struct {
+		MaxPositionHistory int `json:"maxPositionHistory"`
+	} `json:"game"`
+	Analytics struct {
+		GoogleAnalyticsID string `json:"googleAnalyticsId"`
+	} `json:"analytics"`
 }
 
 func Load(env string) (*Config, error) {

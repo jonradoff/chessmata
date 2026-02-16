@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { parseFENState } from '../utils/fenParser'
 
 export type PieceType = 'king' | 'queen' | 'rook' | 'bishop' | 'knight' | 'pawn'
 
@@ -10,10 +11,16 @@ export interface PieceState {
   rank: number // 0-7 (1-8)
 }
 
+export interface MoveArrow {
+  from: { file: number; rank: number }
+  to: { file: number; rank: number }
+}
+
 export interface GameState {
   pieces: PieceState[]
   selectedPieceId: string | null
   hoverSquare: { file: number; rank: number } | null
+  lastMoveArrow: MoveArrow | null
 }
 
 function createInitialPieces(): PieceState[] {
@@ -44,13 +51,20 @@ function createInitialPieces(): PieceState[] {
   return pieces
 }
 
+const DEFAULT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+
 export function useGameState() {
   const [pieces, setPieces] = useState<PieceState[]>(createInitialPieces)
   const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null)
   const [hoverSquare, setHoverSquare] = useState<{ file: number; rank: number } | null>(null)
+  const [boardFEN, setBoardFEN] = useState<string>(DEFAULT_FEN)
+  const [lastMoveArrow, setLastMoveArrowState] = useState<MoveArrow | null>(null)
 
   const selectPiece = useCallback((pieceId: string | null) => {
     setSelectedPieceId(pieceId)
+    if (pieceId) {
+      setLastMoveArrowState(null)
+    }
   }, [])
 
   const movePiece = useCallback((pieceId: string, toFile: number, toRank: number) => {
@@ -79,15 +93,31 @@ export function useGameState() {
     setHoverSquare(null)
   }, [])
 
+  const syncFromFEN = useCallback((fen: string) => {
+    const state = parseFENState(fen)
+    setPieces(state.pieces)
+    setBoardFEN(fen)
+    setSelectedPieceId(null)
+    setHoverSquare(null)
+  }, [])
+
+  const setLastMoveArrow = useCallback((arrow: MoveArrow | null) => {
+    setLastMoveArrowState(arrow)
+  }, [])
+
   return {
     pieces,
     selectedPieceId,
     hoverSquare,
+    boardFEN,
+    lastMoveArrow,
     selectPiece,
     movePiece,
     updateHoverSquare,
     getPieceAt,
     syncFromPieces,
+    syncFromFEN,
+    setLastMoveArrow,
   }
 }
 

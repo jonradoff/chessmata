@@ -1,0 +1,178 @@
+.leaderboard-modal {
+  background: rgba(25, 25, 35, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  width: 520px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+.leaderboard-modal .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.leaderboard-modal .modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.leaderboard-modal .close-button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.leaderboard-modal .close-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.leaderboard-modal .close-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.leaderboard-tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.leaderboard-tab {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.leaderboard-tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.leaderboard-tab.active {
+  color: #6496ff;
+}
+
+.leaderboard-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #6496ff;
+}
+
+.leaderboard-content {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.leaderboard-loading,
+.leaderboard-empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 40px 20px;
+  font-size: 14px;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaderboard-table thead th {
+  text-align: left;
+  padding: 8px 12px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.leaderboard-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.leaderboard-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.leaderboard-table tbody td {
+  padding: 10px 12px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.col-rank {
+  width: 40px;
+  text-align: center !important;
+}
+
+.col-elo {
+  width: 60px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #6496ff !important;
+}
+
+.col-record {
+  width: 90px;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px !important;
+}
+
+.col-games {
+  width: 60px;
+  font-variant-numeric: tabular-nums;
+  text-align: center !important;
+}
+
+.col-name {
+  font-weight: 500;
+}
+
+.rank-medal {
+  font-size: 16px;
+}
+
+.wins {
+  color: #6fbf73;
+}
+
+.losses {
+  color: #f06868;
+}
+
+.draws {
+  color: rgba(255, 255, 255, 0.5);
+}

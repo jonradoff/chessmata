@@ -178,3 +178,201 @@
   background: #1a1a24;
   color: #ffffff;
 }
+
+/* API Keys section */
+
+.api-keys-description {
+  margin: 0 0 16px 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.5;
+}
+
+.api-key-error {
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: rgba(255, 80, 80, 0.15);
+  border: 1px solid rgba(255, 80, 80, 0.3);
+  border-radius: 8px;
+  color: #ff6b6b;
+  font-size: 13px;
+}
+
+.api-key-created-banner {
+  padding: 14px;
+  margin-bottom: 16px;
+  background: rgba(80, 200, 120, 0.12);
+  border: 1px solid rgba(80, 200, 120, 0.3);
+  border-radius: 8px;
+}
+
+.api-key-created-label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 8px;
+}
+
+.api-key-created-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.api-key-created-value code {
+  flex: 1;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #50c878;
+  word-break: break-all;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.copy-key-button {
+  padding: 6px 14px;
+  background: rgba(80, 200, 120, 0.2);
+  border: 1px solid rgba(80, 200, 120, 0.4);
+  border-radius: 6px;
+  color: #50c878;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.copy-key-button:hover {
+  background: rgba(80, 200, 120, 0.3);
+}
+
+.api-key-dismiss {
+  padding: 4px 10px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.api-key-dismiss:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.api-key-create-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.api-key-name-input {
+  flex: 1;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.api-key-name-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.api-key-name-input:focus {
+  border-color: rgba(100, 150, 255, 0.7);
+  box-shadow: 0 0 0 2px rgba(100, 150, 255, 0.2);
+}
+
+.api-key-create-button {
+  padding: 10px 18px;
+  background: rgba(100, 150, 255, 0.2);
+  border: 1px solid rgba(100, 150, 255, 0.4);
+  border-radius: 8px;
+  color: #6496ff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.api-key-create-button:hover:not(:disabled) {
+  background: rgba(100, 150, 255, 0.3);
+}
+
+.api-key-create-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.api-keys-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.api-keys-empty {
+  padding: 24px 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 13px;
+}
+
+.api-key-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.api-key-row:last-child {
+  border-bottom: none;
+}
+
+.api-key-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.api-key-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 4px;
+}
+
+.api-key-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.api-key-meta code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.api-key-delete-button {
+  padding: 6px 12px;
+  background: rgba(255, 80, 80, 0.1);
+  border: 1px solid rgba(255, 80, 80, 0.25);
+  border-radius: 6px;
+  color: #ff6b6b;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 12px;
+}
+
+.api-key-delete-button:hover {
+  background: rgba(255, 80, 80, 0.2);
+  border-color: rgba(255, 80, 80, 0.4);
+}
