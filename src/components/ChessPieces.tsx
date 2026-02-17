@@ -167,9 +167,9 @@ function ChessPiece({ piece, morphProgress, gameState, is3D, isSelected, isInChe
     }
 
     if (isSelected) {
-      // In 3D mode, the lifted piece can intercept clicks meant for the board square
+      // The lifted piece can intercept clicks meant for the board square
       // beneath it. If there's a hover square showing, execute the move there.
-      if (is3D && gameState.hoverSquare) {
+      if (gameState.hoverSquare) {
         const board = boardFromFEN(gameState.boardFEN)
         const from = { file: piece.file, rank: piece.rank }
         const to = { file: gameState.hoverSquare.file, rank: gameState.hoverSquare.rank }
@@ -302,7 +302,7 @@ function ChessPiece({ piece, morphProgress, gameState, is3D, isSelected, isInChe
         <Piece3D type={piece.type as PieceType} isWhite={piece.isWhite} isSelected={isSelected && is3D} isInCheck={pieceInCheck} pieceModel={pieceModel} pieceMaterial={pieceMaterial} />
       </group>
       <group ref={piece2DRef}>
-        <Piece2D type={piece.type as PieceType} isWhite={piece.isWhite} isSelected={isSelected && !is3D} isInCheck={pieceInCheck} />
+        <Piece2D type={piece.type as PieceType} isWhite={piece.isWhite} isSelected={isSelected && !is3D} isInCheck={pieceInCheck} boardYRotation={onlineContext?.playerColor === 'white' ? Math.PI : 0} />
       </group>
       {isSelected && is3D && <SelectionRing />}
       {pieceInCheck && is3D && <CheckRing />}
@@ -446,6 +446,7 @@ interface PieceRenderProps {
   isInCheck?: boolean
   pieceModel?: PieceModel
   pieceMaterial?: PieceMaterial
+  boardYRotation?: number
 }
 
 // Material cache: keyed by "pieceMaterial-isWhite" to avoid recreating materials every frame.
@@ -1704,7 +1705,7 @@ function loadPieceSVG(key: string): Promise<HTMLImageElement> {
   return promise
 }
 
-function Piece2D({ type, isWhite, isSelected, isInCheck }: PieceRenderProps) {
+function Piece2D({ type, isWhite, isSelected, isInCheck, boardYRotation = 0 }: PieceRenderProps) {
   const [svgLoaded, setSvgLoaded] = useState(false)
   const svgKey = `${isWhite ? 'w' : 'b'}${type}`
 
@@ -1756,7 +1757,7 @@ function Piece2D({ type, isWhite, isSelected, isInCheck }: PieceRenderProps) {
   }, [type, isWhite, isSelected, isInCheck, svgLoaded])
 
   return (
-    <group rotation={[-Math.PI / 2, 0, Math.PI]}>
+    <group rotation={[-Math.PI / 2, -boardYRotation, 0]}>
       <mesh position={[0, 0, 0.01]}>
         <planeGeometry args={[0.9, 0.9]} />
         <meshBasicMaterial map={texture} transparent alphaTest={0.1} side={THREE.DoubleSide} />
