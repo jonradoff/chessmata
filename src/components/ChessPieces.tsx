@@ -1758,9 +1758,9 @@ function Piece2D({ type, isWhite, isSelected, isInCheck, boardYRotation = 0 }: P
 
   return (
     <group rotation={[-Math.PI / 2, -boardYRotation, 0]}>
-      <mesh position={[0, 0, 0.01]}>
+      <mesh position={[0, 0, 0.01]} renderOrder={10}>
         <planeGeometry args={[0.9, 0.9]} />
-        <meshBasicMaterial map={texture} transparent alphaTest={0.1} side={THREE.DoubleSide} />
+        <meshBasicMaterial map={texture} transparent alphaTest={0.1} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>
     </group>
   )

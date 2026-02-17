@@ -40,7 +40,7 @@ interface ChessSceneProps {
 }
 
 export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameState, settings, onlineContext }: ChessSceneProps) {
-  const { camera } = useThree()
+  const { camera, size } = useThree()
   const controlsRef = useRef<any>(null)
   const groupRef = useRef<THREE.Group>(null)
   const morphProgressRef = useRef({ value: is3D ? 1 : 0 })
@@ -125,7 +125,10 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
         ease: 'power2.inOut'
       }, 0.9)
     } else {
-      // Going from 2D to 3D: Morph and camera move together
+      // Going from 2D to 3D: Restore perspective projection before animating
+      camera.updateProjectionMatrix()
+
+      // Morph and camera move together
       tl.to(camera.position, {
         x: targetCamera.position.x,
         y: targetCamera.position.y,
@@ -176,6 +179,24 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
   useFrame(() => {
     if (controlsRef.current) {
       controlsRef.current.update()
+    }
+
+    // Override to orthographic projection in 2D mode for a perfectly square board
+    if (!is3D && !isTransitioning) {
+      const aspect = size.width / size.height
+      const frustumHalf = 5.0
+      if (aspect >= 1) {
+        camera.projectionMatrix.makeOrthographic(
+          -frustumHalf * aspect, frustumHalf * aspect,
+          frustumHalf, -frustumHalf, 0.1, 100
+        )
+      } else {
+        camera.projectionMatrix.makeOrthographic(
+          -frustumHalf, frustumHalf,
+          frustumHalf / aspect, -frustumHalf / aspect, 0.1, 100
+        )
+      }
+      camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert()
     }
   })
 
