@@ -1869,7 +1869,7 @@ function Piece2D({ type, isWhite, isSelected, isInCheck }: PieceRenderProps) {
   }, [type, isWhite, isSelected, isInCheck, svgLoaded])
 
   return (
-    <group rotation={[-Math.PI / 2, 0, 0]}>
+    <group rotation={[-Math.PI / 2, 0, Math.PI]}>
       <mesh position={[0, 0, 0.01]}>
         <planeGeometry args={[0.9, 0.9]} />
         <meshBasicMaterial map={texture} transparent alphaTest={0.1} side={THREE.DoubleSide} />
