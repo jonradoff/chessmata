@@ -169,7 +169,7 @@ function ChessPiece({ piece, morphProgress, gameState, is3D, isSelected, isInChe
     if (isSelected) {
       // The lifted piece can intercept clicks meant for the board square
       // beneath it. If there's a hover square showing, execute the move there.
-      if (gameState.hoverSquare) {
+      if (is3D && gameState.hoverSquare) {
         const board = boardFromFEN(gameState.boardFEN)
         const from = { file: piece.file, rank: piece.rank }
         const to = { file: gameState.hoverSquare.file, rank: gameState.hoverSquare.rank }
