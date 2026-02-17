@@ -52,9 +52,9 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
 
   // Camera positions
   const camera3D = useMemo(() => ({ position: new THREE.Vector3(0, 8, 12), target: new THREE.Vector3(0, 0, 0) }), [])
-  // Very high camera + tiny FOV approximates orthographic (no trapezoid, correct raycasting)
-  // halfHeight = height * tan(fov/2); for 80% board: halfHeight ≈ 6.25 → fov ≈ 1.43° at y=500
-  const camera2D = useMemo(() => ({ position: new THREE.Vector3(0, 500, 0), target: new THREE.Vector3(0, 0, 0), fov: 1.43 }), [])
+  // Moderate height + narrower FOV: negligible perspective distortion (<0.5%), smooth animation
+  // halfHeight = 50 * tan(7.125°) ≈ 6.25 → board at ~64% of viewport (80% of original)
+  const camera2D = useMemo(() => ({ position: new THREE.Vector3(0, 50, 0), target: new THREE.Vector3(0, 0, 0), fov: 14.25 }), [])
 
   useEffect(() => {
     if (prevIs3DRef.current === is3D) return
@@ -76,7 +76,7 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
         }
         // For 2D mode, ensure camera is perfectly overhead with narrow FOV
         if (!is3D) {
-          camera.position.set(0, 500, 0)
+          camera.position.set(0, 50, 0)
           camera.rotation.set(-Math.PI / 2, 0, 0)
           ;(camera as THREE.PerspectiveCamera).fov = camera2D.fov
           camera.updateProjectionMatrix()
@@ -88,13 +88,12 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
     if (!is3D) {
       const perspCam = camera as THREE.PerspectiveCamera
 
-      // Going from 3D to 2D: Move camera overhead, narrow FOV, morph pieces
-      // Phase 1: Move camera overhead (0.8s)
+      // Going from 3D to 2D: everything animates together
       tl.to(camera.position, {
         x: 0,
-        y: 16,
-        z: 0.1,
-        duration: 0.8,
+        y: 50,
+        z: 0,
+        duration: 1.5,
         ease: 'power2.inOut'
       }, 0)
 
@@ -102,7 +101,20 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
         x: -Math.PI / 2,
         y: 0,
         z: 0,
-        duration: 0.8,
+        duration: 1.5,
+        ease: 'power2.inOut'
+      }, 0)
+
+      tl.to(perspCam, {
+        fov: camera2D.fov,
+        duration: 1.5,
+        ease: 'power2.inOut',
+        onUpdate: () => perspCam.updateProjectionMatrix()
+      }, 0)
+
+      tl.to(morphProgressRef.current, {
+        value: 0,
+        duration: 1.5,
         ease: 'power2.inOut'
       }, 0)
 
@@ -111,31 +123,10 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
           x: 0,
           y: 0,
           z: 0,
-          duration: 0.8,
+          duration: 1.5,
           ease: 'power2.inOut'
         }, 0)
       }
-
-      // Phase 2: Morph to 2D, zoom up high, narrow FOV (approximates orthographic)
-      tl.to(morphProgressRef.current, {
-        value: 0,
-        duration: 1.2,
-        ease: 'power2.inOut'
-      }, 0.7)
-
-      tl.to(camera.position, {
-        y: 500,
-        z: 0,
-        duration: 1.0,
-        ease: 'power2.inOut'
-      }, 0.9)
-
-      tl.to(perspCam, {
-        fov: camera2D.fov,
-        duration: 1.0,
-        ease: 'power2.inOut',
-        onUpdate: () => perspCam.updateProjectionMatrix()
-      }, 0.9)
     } else {
       const perspCam = camera as THREE.PerspectiveCamera
 
