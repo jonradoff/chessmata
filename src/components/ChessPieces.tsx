@@ -4,7 +4,7 @@ import { useFrame } from '@react-three/fiber'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
-import { boardToWorld, worldToBoard } from '../hooks/useGameState'
+import { boardToWorld } from '../hooks/useGameState'
 import type { PieceState, useGameState, MoveArrow } from '../hooks/useGameState'
 import type { OnlineContext } from './ChessScene'
 import { canSelectPiece, isValidMove, toAlgebraic, isInCheck } from '../utils/chessRules'
@@ -106,12 +106,6 @@ function ChessPiece({ piece, morphProgress, gameState, is3D, isSelected, isInChe
   // Calculate base position from board coordinates
   const basePosition = useMemo(() => boardToWorld(piece.file, piece.rank), [piece.file, piece.rank])
 
-  // For 2D drag — use raycasting to ground plane for accurate positioning
-  const [dragOffset, setDragOffset] = useState<[number, number]>([0, 0])
-  const [isDragging, setIsDragging] = useState(false)
-  const groundPlane = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0))
-  const dragIntersection = useRef(new THREE.Vector3())
-
   useFrame((state, delta) => {
     if (groupRef.current && piece3DRef.current && piece2DRef.current) {
       const progress = morphProgress.current.value
@@ -128,20 +122,11 @@ function ChessPiece({ piece, morphProgress, gameState, is3D, isSelected, isInChe
       const liftHeight = liftProgress.current * 1.5
       const bobAmount = isSelected ? Math.sin(state.clock.elapsedTime * 3) * 0.05 : 0
 
-      // In 3D mode, lift the piece; in 2D mode, use drag offset
-      if (is3D) {
-        groupRef.current.position.set(
-          basePosition[0],
-          basePosition[1] + liftHeight + bobAmount,
-          basePosition[2]
-        )
-      } else {
-        groupRef.current.position.set(
-          basePosition[0] + dragOffset[0],
-          basePosition[1],
-          basePosition[2] + dragOffset[1]
-        )
-      }
+      groupRef.current.position.set(
+        basePosition[0],
+        basePosition[1] + liftHeight + bobAmount,
+        basePosition[2]
+      )
 
       // 3D piece visibility
       piece3DRef.current.visible = progress > 0.01
@@ -153,7 +138,7 @@ function ChessPiece({ piece, morphProgress, gameState, is3D, isSelected, isInChe
       piece2DRef.current.visible = twoDScale > 0.01
       const scale2D = twoDScale * (isSelected && !is3D ? 1.15 : 1)
       piece2DRef.current.scale.set(scale2D, scale2D, 1)
-      piece2DRef.current.position.y = 0.1 + (isDragging ? 0.1 : 0)
+      piece2DRef.current.position.y = 0.1
     }
   })
 
@@ -307,114 +292,11 @@ function ChessPiece({ piece, morphProgress, gameState, is3D, isSelected, isInChe
     }
   }
 
-  const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
-    if (!is3D && !gameState.selectedPieceId) {
-      const playerColor = onlineContext?.playerColor
-      const currentTurn = onlineContext?.currentTurn
-      const gameStatus = onlineContext?.gameStatus
-      const isOnlineGame = onlineContext?.sessionId != null
-
-      // In watch/spectator mode (no makeMove), don't allow interaction
-      if (isOnlineGame && !onlineContext?.makeMove) {
-        return
-      }
-
-      // If game is waiting or complete, don't allow interaction
-      if (isOnlineGame && (gameStatus === 'waiting' || gameStatus === 'complete')) {
-        return
-      }
-
-      // Check if we can select this piece
-      if (!canSelectPiece(piece, playerColor || null, currentTurn || null)) {
-        return
-      }
-
-      e.stopPropagation()
-      ;(e.target as Element).setPointerCapture(e.pointerId)
-      setIsDragging(true)
-      gameState.selectPiece(piece.id)
-    }
-  }
-
-  const handlePointerUp = async (e: ThreeEvent<PointerEvent>) => {
-    if (!is3D && isDragging) {
-      e.stopPropagation()
-      ;(e.target as Element).releasePointerCapture(e.pointerId)
-      setIsDragging(false)
-      const dropX = basePosition[0] + dragOffset[0]
-      const dropZ = basePosition[2] + dragOffset[1]
-      const targetSquare = worldToBoard(dropX, dropZ)
-
-      if (targetSquare) {
-        const isOnlineGame = onlineContext?.sessionId != null
-
-        // Validate the move
-        const board = boardFromFEN(gameState.boardFEN)
-        const from = { file: piece.file, rank: piece.rank }
-        const to = { file: targetSquare.file, rank: targetSquare.rank }
-        const validation = isValidMove(board, from, to)
-
-        if (validation.valid) {
-          const fromNotation = toAlgebraic(from.file, from.rank)
-          const toNotation = toAlgebraic(to.file, to.rank)
-
-          // Detect pawn promotion
-          if (piece.type === 'pawn' && (targetSquare.rank === 7 || targetSquare.rank === 0)) {
-            if (onlineContext?.onPendingPromotion) {
-              onlineContext.onPendingPromotion({
-                from: fromNotation,
-                to: toNotation,
-                pieceId: piece.id,
-                isWhite: piece.isWhite,
-                toFile: targetSquare.file,
-                toRank: targetSquare.rank,
-              })
-            }
-            gameState.selectPiece(null)
-            setDragOffset([0, 0])
-            return
-          }
-
-          // If online game, send move to server
-          if (isOnlineGame && onlineContext?.makeMove) {
-            try {
-              await onlineContext.makeMove(fromNotation, toNotation)
-            } catch (err) {
-              console.error('Failed to make move:', err)
-            }
-          }
-
-          gameState.movePiece(piece.id, targetSquare.file, targetSquare.rank)
-        } else {
-          gameState.selectPiece(null)
-        }
-      } else {
-        gameState.selectPiece(null)
-      }
-      setDragOffset([0, 0])
-    }
-  }
-
-  const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
-    if (!is3D && isDragging) {
-      e.stopPropagation()
-      if (e.ray.intersectPlane(groundPlane.current, dragIntersection.current)) {
-        setDragOffset([
-          dragIntersection.current.x - basePosition[0],
-          dragIntersection.current.z - basePosition[2]
-        ])
-      }
-    }
-  }
-
   return (
     <group
       ref={groupRef}
       position={basePosition}
       onClick={handleClick}
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerMove={handlePointerMove}
     >
       <group ref={piece3DRef}>
         <Piece3D type={piece.type as PieceType} isWhite={piece.isWhite} isSelected={isSelected && is3D} isInCheck={pieceInCheck} pieceModel={pieceModel} pieceMaterial={pieceMaterial} />
