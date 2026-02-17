@@ -2,9 +2,12 @@ package handlers
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -336,7 +339,7 @@ func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Authenticate via optional JWT token query param for player connections
+	// Authenticate via optional JWT or API key query param for player connections
 	if !isSpectator {
 		tokenStr := r.URL.Query().Get("token")
 		game, err := h.GetGame(sessionId)
@@ -344,24 +347,43 @@ func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 			// Find the player in the game
 			for _, p := range game.Players {
 				if p.ID == playerId && p.UserID != nil {
-					// This player slot belongs to an authenticated user — require matching token
+					// This player slot belongs to an authenticated user — require matching token or API key
 					if tokenStr == "" {
 						http.Error(w, "Authentication required", http.StatusUnauthorized)
 						return
 					}
-					claims, err := h.jwtService.ValidateAccessToken(tokenStr)
-					if err != nil {
-						http.Error(w, "Invalid token", http.StatusUnauthorized)
-						return
-					}
-					claimUID, err := primitive.ObjectIDFromHex(claims.UserID)
-					if err != nil {
-						http.Error(w, "Invalid token claims", http.StatusUnauthorized)
-						return
-					}
-					if claimUID != *p.UserID {
-						http.Error(w, "Not authorized for this player", http.StatusForbidden)
-						return
+
+					if strings.HasPrefix(tokenStr, "cmk_") {
+						// API key authentication
+						hash := sha256.Sum256([]byte(tokenStr))
+						keyHash := base64.StdEncoding.EncodeToString(hash[:])
+
+						var apiKey models.ApiKey
+						err := h.db.ApiKeys().FindOne(context.Background(), bson.M{"keyHash": keyHash}).Decode(&apiKey)
+						if err != nil {
+							http.Error(w, "Invalid API key", http.StatusUnauthorized)
+							return
+						}
+						if apiKey.UserID != *p.UserID {
+							http.Error(w, "Not authorized for this player", http.StatusForbidden)
+							return
+						}
+					} else {
+						// JWT authentication
+						claims, err := h.jwtService.ValidateAccessToken(tokenStr)
+						if err != nil {
+							http.Error(w, "Invalid token", http.StatusUnauthorized)
+							return
+						}
+						claimUID, err := primitive.ObjectIDFromHex(claims.UserID)
+						if err != nil {
+							http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+							return
+						}
+						if claimUID != *p.UserID {
+							http.Error(w, "Not authorized for this player", http.StatusForbidden)
+							return
+						}
 					}
 					break
 				}
