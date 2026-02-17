@@ -40,7 +40,7 @@ interface ChessSceneProps {
 }
 
 export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameState, settings, onlineContext }: ChessSceneProps) {
-  const { camera, size } = useThree()
+  const { camera } = useThree()
   const controlsRef = useRef<any>(null)
   const groupRef = useRef<THREE.Group>(null)
   const morphProgressRef = useRef({ value: is3D ? 1 : 0 })
@@ -52,7 +52,9 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
 
   // Camera positions
   const camera3D = useMemo(() => ({ position: new THREE.Vector3(0, 8, 12), target: new THREE.Vector3(0, 0, 0) }), [])
-  const camera2D = useMemo(() => ({ position: new THREE.Vector3(0, 28, 0), target: new THREE.Vector3(0, 0, 0) }), []) // Higher camera reduces perspective distortion
+  // Very high camera + tiny FOV approximates orthographic (no trapezoid, correct raycasting)
+  // halfHeight = height * tan(fov/2); for 80% board: halfHeight ≈ 6.25 → fov ≈ 1.43° at y=500
+  const camera2D = useMemo(() => ({ position: new THREE.Vector3(0, 500, 0), target: new THREE.Vector3(0, 0, 0), fov: 1.43 }), [])
 
   useEffect(() => {
     if (prevIs3DRef.current === is3D) return
@@ -72,10 +74,11 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
         if (controlsRef.current) {
           controlsRef.current.enabled = is3D
         }
-        // For 2D mode, ensure camera is perfectly overhead
+        // For 2D mode, ensure camera is perfectly overhead with narrow FOV
         if (!is3D) {
-          camera.position.set(0, 28, 0)
+          camera.position.set(0, 500, 0)
           camera.rotation.set(-Math.PI / 2, 0, 0)
+          ;(camera as THREE.PerspectiveCamera).fov = camera2D.fov
           camera.updateProjectionMatrix()
         }
         onTransitionComplete()
@@ -83,12 +86,14 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
     })
 
     if (!is3D) {
-      // Going from 3D to 2D: First move camera overhead, THEN morph
-      // Phase 1: Move camera to overhead view of 3D board (0.8s)
+      const perspCam = camera as THREE.PerspectiveCamera
+
+      // Going from 3D to 2D: Move camera overhead, narrow FOV, morph pieces
+      // Phase 1: Move camera overhead (0.8s)
       tl.to(camera.position, {
         x: 0,
         y: 16,
-        z: 0.1, // Slight offset to avoid gimbal lock
+        z: 0.1,
         duration: 0.8,
         ease: 'power2.inOut'
       }, 0)
@@ -111,7 +116,7 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
         }, 0)
       }
 
-      // Phase 2: Morph to 2D and zoom out (1.2s, starts at 0.7s for overlap)
+      // Phase 2: Morph to 2D, zoom up high, narrow FOV (approximates orthographic)
       tl.to(morphProgressRef.current, {
         value: 0,
         duration: 1.2,
@@ -119,16 +124,29 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
       }, 0.7)
 
       tl.to(camera.position, {
-        y: 28,
+        y: 500,
         z: 0,
         duration: 1.0,
         ease: 'power2.inOut'
       }, 0.9)
-    } else {
-      // Going from 2D to 3D: Restore perspective projection before animating
-      camera.updateProjectionMatrix()
 
-      // Morph and camera move together
+      tl.to(perspCam, {
+        fov: camera2D.fov,
+        duration: 1.0,
+        ease: 'power2.inOut',
+        onUpdate: () => perspCam.updateProjectionMatrix()
+      }, 0.9)
+    } else {
+      const perspCam = camera as THREE.PerspectiveCamera
+
+      // Going from 2D to 3D: Restore FOV, move camera, morph pieces
+      tl.to(perspCam, {
+        fov: 45,
+        duration: 1.5,
+        ease: 'power2.inOut',
+        onUpdate: () => perspCam.updateProjectionMatrix()
+      }, 0)
+
       tl.to(camera.position, {
         x: targetCamera.position.x,
         y: targetCamera.position.y,
@@ -179,24 +197,6 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
   useFrame(() => {
     if (controlsRef.current) {
       controlsRef.current.update()
-    }
-
-    // Override to orthographic projection in 2D mode for a perfectly square board
-    if (!is3D && !isTransitioning) {
-      const aspect = size.width / size.height
-      const frustumHalf = 5.0
-      if (aspect >= 1) {
-        camera.projectionMatrix.makeOrthographic(
-          -frustumHalf * aspect, frustumHalf * aspect,
-          frustumHalf, -frustumHalf, 0.1, 100
-        )
-      } else {
-        camera.projectionMatrix.makeOrthographic(
-          -frustumHalf, frustumHalf,
-          frustumHalf / aspect, -frustumHalf / aspect, 0.1, 100
-        )
-      }
-      camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert()
     }
   })
 

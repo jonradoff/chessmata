@@ -1757,7 +1757,7 @@ function Piece2D({ type, isWhite, isSelected, isInCheck, boardYRotation = 0 }: P
   }, [type, isWhite, isSelected, isInCheck, svgLoaded])
 
   return (
-    <group rotation={[-Math.PI / 2, -boardYRotation, 0]}>
+    <group rotation={[-Math.PI / 2 + boardYRotation, -boardYRotation, 0]}>
       <mesh position={[0, 0, 0.01]} renderOrder={10}>
         <planeGeometry args={[0.9, 0.9]} />
         <meshBasicMaterial map={texture} transparent alphaTest={0.1} side={THREE.DoubleSide} depthWrite={false} />
