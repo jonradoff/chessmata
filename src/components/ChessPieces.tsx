@@ -106,9 +106,11 @@ function ChessPiece({ piece, morphProgress, gameState, is3D, isSelected, isInChe
   // Calculate base position from board coordinates
   const basePosition = useMemo(() => boardToWorld(piece.file, piece.rank), [piece.file, piece.rank])
 
-  // For 2D drag
+  // For 2D drag — use raycasting to ground plane for accurate positioning
   const [dragOffset, setDragOffset] = useState<[number, number]>([0, 0])
   const [isDragging, setIsDragging] = useState(false)
+  const groundPlane = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0))
+  const dragIntersection = useRef(new THREE.Vector3())
 
   useFrame((state, delta) => {
     if (groupRef.current && piece3DRef.current && piece2DRef.current) {
@@ -328,6 +330,7 @@ function ChessPiece({ piece, morphProgress, gameState, is3D, isSelected, isInChe
       }
 
       e.stopPropagation()
+      ;(e.target as Element).setPointerCapture(e.pointerId)
       setIsDragging(true)
       gameState.selectPiece(piece.id)
     }
@@ -336,6 +339,7 @@ function ChessPiece({ piece, morphProgress, gameState, is3D, isSelected, isInChe
   const handlePointerUp = async (e: ThreeEvent<PointerEvent>) => {
     if (!is3D && isDragging) {
       e.stopPropagation()
+      ;(e.target as Element).releasePointerCapture(e.pointerId)
       setIsDragging(false)
       const dropX = basePosition[0] + dragOffset[0]
       const dropZ = basePosition[2] + dragOffset[1]
@@ -392,13 +396,14 @@ function ChessPiece({ piece, morphProgress, gameState, is3D, isSelected, isInChe
   }
 
   const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
-    if (!is3D && isDragging && groupRef.current) {
+    if (!is3D && isDragging) {
       e.stopPropagation()
-      const movementScale = 0.02
-      setDragOffset(prev => [
-        prev[0] + e.movementX * movementScale,
-        prev[1] + e.movementY * movementScale
-      ])
+      if (e.ray.intersectPlane(groundPlane.current, dragIntersection.current)) {
+        setDragOffset([
+          dragIntersection.current.x - basePosition[0],
+          dragIntersection.current.z - basePosition[2]
+        ])
+      }
     }
   }
 
