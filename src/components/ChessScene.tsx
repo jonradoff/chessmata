@@ -186,8 +186,14 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
   }, [gameState.selectedPieceId, gameState.selectPiece])
 
   useFrame(() => {
-    if (controlsRef.current) {
-      controlsRef.current.update()
+    if (is3D) {
+      if (controlsRef.current) {
+        controlsRef.current.update()
+      }
+    } else if (!isTransitioning) {
+      // Enforce exact overhead camera in 2D to prevent OrbitControls drift
+      camera.position.set(0, 50, 0)
+      camera.rotation.set(-Math.PI / 2, 0, 0)
     }
   })
 
