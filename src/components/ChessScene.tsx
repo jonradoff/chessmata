@@ -52,9 +52,9 @@ export function ChessScene({ is3D, isTransitioning, onTransitionComplete, gameSt
 
   // Camera positions
   const camera3D = useMemo(() => ({ position: new THREE.Vector3(0, 8, 12), target: new THREE.Vector3(0, 0, 0) }), [])
-  // Moderate height + wider FOV: negligible perspective distortion (<0.5%), smooth animation
-  // halfHeight = 50 * tan(11.75°) ≈ 10.4 → board at ~38% of viewport (60% of previous)
-  const camera2D = useMemo(() => ({ position: new THREE.Vector3(0, 50, 0), target: new THREE.Vector3(0, 0, 0), fov: 23.5 }), [])
+  // Moderate height + narrowed FOV for closer view; enforced overhead prevents trapezoid
+  // halfHeight = 50 * tan(7.85°) ≈ 6.9 → board at ~58% of viewport
+  const camera2D = useMemo(() => ({ position: new THREE.Vector3(0, 50, 0), target: new THREE.Vector3(0, 0, 0), fov: 15.7 }), [])
 
   useEffect(() => {
     if (prevIs3DRef.current === is3D) return
